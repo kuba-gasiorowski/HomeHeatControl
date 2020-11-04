@@ -1,0 +1,15 @@
+[Unit]
+Description=Home Heating service
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/python3 -u HomeHeat.py
+WorkingDirectory=/home/pi/HomeHeatControl
+StandardOutput=inherit
+StandardError=inherit
+Restart=always
+User=pi
+ExecStartPre=-HomeHeatPreStart.sh
+
+[Install]
+WantedBy=multi-user.target

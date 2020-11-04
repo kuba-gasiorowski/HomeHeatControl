@@ -1,0 +1,17 @@
+version: 1
+disable_existing_loggers: true
+formatters:
+  simple:
+    format: '%(asctime)s - %(levelname)s - %(message)s'
+handlers:
+  file:
+    class: logging.handlers.TimedRotatingFileHandler
+    level: DEBUG
+    filename: log/HomeHeat.log
+    when: W0
+    backupCount: 5
+    atTime: 1970-01-01 20:00:00
+    formatter: simple
+root:
+  level: INFO
+  handlers: [file]
