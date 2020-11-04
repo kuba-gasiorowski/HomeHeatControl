@@ -274,7 +274,7 @@ while True:
             continue
         if day_period == 0:
             continue
-        if cfg['circuits'][index]['active'] != 'True':
+        if not cfg['circuits'][index]['active']:
             log_str = "Circuit %d isn't active"
             if circuits[index][1] != GPIO.LOW:
                 circuits[index][1] = GPIO.LOW
