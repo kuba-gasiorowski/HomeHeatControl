@@ -8,6 +8,7 @@ WorkingDirectory=/home/pi/HomeHeatControl
 StandardOutput=inherit
 StandardError=inherit
 Restart=always
+RestartSec=50
 User=pi
 ExecStartPre=-HomeHeatPreStart.sh
 
