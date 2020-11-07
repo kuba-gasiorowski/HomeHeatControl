@@ -22,8 +22,11 @@ NTC_C_FACTOR=1.6897560208446226e-7
 
 DAY_SECONDS=86400
 
-TEMP_MIN = -20.0
-TEMP_MIN_EXT = -50.0
+TEMP_MIN=-20.0
+TEMP_MIN_EXT=-50.0
+
+TEMP_MAX=100.0
+TEMP_MAX_EXT=60.0
 
 def get_temperature(sensor_input, sensor_map_tab):
     """
@@ -44,6 +47,8 @@ def get_temperature(sensor_input, sensor_map_tab):
     v0 = (v0_0 + v0_1 + v0_2)/3
     GPIO.output(sensor_obj[1], GPIO.LOW)
     r1 = sensor_obj[2]
+    if v0 == REF_VOLTAGE:
+        v0 = REF_VOLTAGE - 1e-4
     thermistor_resistance = (r1*v0)/(REF_VOLTAGE - v0)
     log_tr = math.log(thermistor_resistance)
     return (1.0 / (NTC_A_FACTOR + NTC_B_FACTOR * log_tr + NTC_C_FACTOR * log_tr * log_tr * log_tr)) - 273.15
@@ -86,7 +91,7 @@ def get_heating_period(heat_level, current_temp, max_temp, base_level, heat_char
     :param base_level: The base temperature for circuit (to be reached for heat_level=0)
     :param heat_characteristics: The heating characteristics of the circuit - table of dictionary elements
          each with 'tempMax' and 'heatFactor' defining the heating function in the specific segment
-    :return: Heating length in seconds
+    :return: Heating length in seconds to reach desired temperature, desired temperature
     """
     desired_temp = base_level + (max_temp - base_level) * heat_level
     diff = desired_temp - current_temp
@@ -109,7 +114,7 @@ def get_heating_period(heat_level, current_temp, max_temp, base_level, heat_char
     heat_factor = heat_characteristics[0]['heatFactor']
     if current_temp < heat_characteristics[0]['tempMax']:
         heat_period += (temp_max_b - current_temp) / heat_factor
-    return heat_period
+    return heat_period, desired_temp
 
 def parse_time(time_str):
     """
@@ -169,6 +174,7 @@ def reset_circuits(circuit_table):
     for elem in circuit_table:
         GPIO.output(elem[0], GPIO.LOW)
         elem[1] = GPIO.LOW
+        time.sleep(1.0)
 
 @atexit.register
 def cleanup():
@@ -246,8 +252,8 @@ while True:
     except Exception:
         pass
     ext_temp_avg = calculate_avg_ext_temperature(ext_temp, ext_temp_array)
-    if ext_temp <= TEMP_MIN_EXT:
-        logger.warning("External temperature: %f below reasonable level, check sensor connection!!!", ext_temp)
+    if ext_temp <= TEMP_MIN_EXT or ext_temp >= TEMP_MAX_EXT:
+        logger.warning("External temperature: %f outside of reasonable level, check sensor connection!!!", ext_temp)
         reset_circuits(circuits)
         continue
     try:
@@ -264,10 +270,13 @@ while True:
     for index, sensor in enumerate(sensor_map[1:]):
         temp = get_temperature(index+1, sensor_map)
         circuit_temp.append(temp)
-        logger.debug("Temperature in room '%s'(%d): %f",
-                    cfg['circuits'][index]['description'], index, temp)
-        if temp <= TEMP_MIN:
-            logger.warning("Temperature in room '%s'(%d): %f below reasonable level, check sensor connection!!!",
+        heat_status_string = ""
+        if day_period > 0:
+            heat_status_string = " (" + ("ON" if circuits[index][1] == GPIO.HIGH else "OFF") + ")"
+        logger.debug("Temperature in room '%s'(%d): %f%s",
+                    cfg['circuits'][index]['description'], index, temp, heat_status_string)
+        if temp <= TEMP_MIN or temp >= TEMP_MAX:
+            logger.warning("Temperature in room '%s'(%d): %f outside of reasonable level, check sensor connection!!!",
                            cfg['circuits'][index]['description'], index, temp)
             circuits[index][1] = GPIO.LOW
             GPIO.output(circuits[index][0], GPIO.LOW)
@@ -282,10 +291,11 @@ while True:
                 log_str = log_str + ", heating switching off"
             logger.info(log_str, index)
             continue
-        heating_period = get_heating_period(heating_level, temp,
-                                            cfg['circuits'][index]['maxTemp'],
-                                            cfg['circuits'][index]['tempBaseLevel'],
-                                            cfg['circuits'][index]['heatCharacteristics'])
+        heating_period, desired_temp =\
+            get_heating_period(heating_level, temp,
+                               cfg['circuits'][index]['maxTemp'],
+                               cfg['circuits'][index]['tempBaseLevel'],
+                               cfg['circuits'][index]['heatCharacteristics'])
         if heating_period <= 0 and circuits[index][1] != GPIO.LOW:
             circuits[index][1] = GPIO.LOW
             GPIO.output(circuits[index][0], GPIO.LOW)
@@ -294,7 +304,7 @@ while True:
             circuits[index][1] = GPIO.HIGH
             GPIO.output(circuits[index][0], GPIO.HIGH)
             logger.info(
-                "Starting heating circuit %s [%d] = %f, %d" % (cfg['circuits'][index]['description'], index, temp, heating_period))
+                "Starting heating circuit %s [%d] = %f, %d to reach %f" % (cfg['circuits'][index]['description'], index, temp, heating_period, desired_temp))
     time_to_sleep = 60.0 - datetime.datetime.now().timestamp() + curr_timestamp.timestamp()
     if time_to_sleep < 0:
         logger.warning("No time left after cycle: %f" % time_to_sleep)
