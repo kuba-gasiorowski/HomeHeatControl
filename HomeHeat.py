@@ -192,6 +192,7 @@ gpio_circuit = [26, 19, 5, 6, 13, 25, 12, 16, 20, 21]
 GPIO.setup(gpio_circuit, GPIO.OUT)
 
 i2c = busio.I2C(board.SCL, board.SDA)
+time.sleep(1.0)
 ads0 = ADS.ADS1115(i2c, address=0x48)
 ads1 = ADS.ADS1115(i2c, address=0x49)
 ads2 = ADS.ADS1115(i2c, address=0x4A)
