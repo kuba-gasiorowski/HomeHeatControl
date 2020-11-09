@@ -96,7 +96,7 @@ def get_heating_period(heat_level, current_temp, max_temp, base_level, heat_char
     desired_temp = base_level + (max_temp - base_level) * heat_level
     diff = desired_temp - current_temp
     if diff <= 0:
-        return 0
+        return 0, 0.0
     heat_period = 0
     n = len(heat_characteristics) - 2
     while n >= 0:
