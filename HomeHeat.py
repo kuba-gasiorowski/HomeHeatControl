@@ -82,22 +82,42 @@ def get_ext_temperature_level(avg_temp, ext_max_temp, ext_min_temp, ext_start_th
         return 1.0
     return ((ext_max_temp - ext_start_threshold*ext_min_temp)/(1 - ext_start_threshold) - avg_temp)/((ext_max_temp - ext_start_threshold*ext_min_temp)/(1 - ext_start_threshold) - ext_min_temp)
 
-def get_heating_period(heat_level, current_temp, max_temp, base_level, heat_characteristics):
+def get_heating_period(heat_level, day_period, current_temp, base_level, circuit_data):
     """
     Calculates the length in seconds to heat the specific circuit
     :param heat_level: The heat level (0-1) from the external temperature
+    :param day_period: The heating period - 1 (night) or 2 (day)
     :param current_temp: The current circuit temperature
-    :param max_temp: The max temperature for circuit (to be reached for heat_level=1)
     :param base_level: The base temperature for circuit (to be reached for heat_level=0)
-    :param heat_characteristics: The heating characteristics of the circuit - table of dictionary elements
-         each with 'tempMax' and 'heatFactor' defining the heating function in the specific segment
+    :param circuit_data: The structure with circuit definition, containing maxTemp, the heating characteristics
+           of the circuit - table of dictionary elements each with 'tempMax' and 'heatFactor' defining the heating
+           function in the specific segment
     :return: Heating length in seconds to reach desired temperature, desired temperature
     """
+    max_temp = circuit_data['maxTemp']
+    try:
+        base_level = circuit_data['tempBaseLevel']
+    except KeyError:
+        pass
+    adjust_value = 1
+    try:
+        if day_period == 1:
+            adjust_value += circuit_data['nightAdjust']
+        elif day_period == 2:
+            adjust_value += circuit_data['dayAdjust']
+    except KeyError:
+        pass
+    heat_level *= adjust_value
+    if heat_level > 1:
+        heat_level = 1
+    elif heat_level < 0:
+        heat_level = 0
     desired_temp = base_level + (max_temp - base_level) * heat_level
     diff = desired_temp - current_temp
     if diff <= 0:
         return 0, 0.0
     heat_period = 0
+    heat_characteristics = circuit_data['heatCharacteristics']
     n = len(heat_characteristics) - 2
     while n >= 0:
         elem_a = heat_characteristics[n]
@@ -293,10 +313,7 @@ while True:
             logger.info(log_str, index)
             continue
         heating_period, desired_temp =\
-            get_heating_period(heating_level, temp,
-                               cfg['circuits'][index]['maxTemp'],
-                               cfg['circuits'][index]['tempBaseLevel'],
-                               cfg['circuits'][index]['heatCharacteristics'])
+            get_heating_period(heating_level, day_period, temp, cfg['tempBaseLevel'], cfg['circuits'][index])
         if heating_period <= 0 and circuits[index][1] != GPIO.LOW:
             circuits[index][1] = GPIO.LOW
             GPIO.output(circuits[index][0], GPIO.LOW)
