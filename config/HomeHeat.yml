@@ -3,48 +3,48 @@ extMinTemp: -18.0
 extMaxTemp: 12.0
 extStartThreshold: 0.15
 tempBaseLevel: 20.0
-nightStartTime: 22:01:00
-nightEndTime: 6:59:00
-dayStartTime: 13:01:00
-dayEndTime: 15:59:00
-logLevel: INFO
+nightStartTime: 22:00:00
+nightEndTime: 6:58:00
+dayStartTime: 13:00:00
+dayEndTime: 15:58:00
+logLevel: DEBUG
 
 circuits:
   - index: 0
     description: kitchen
-    active: false
+    active: true
     maxTemp: 35.0
     tempBaseLevel: 20.0
     heatCharacteristics:
       - tempMax: 20.0
-        heatFactor: 8.3333e-4
+        heatFactor: 1.0384e-3
       - tempMax: 23.0
-        heatFactor: 8.3333e-4
+        heatFactor: 1.0384e-3
       - tempMax: 26.0
-        heatFactor: 8.3333e-4
+        heatFactor: 1.0384e-3
       - tempMax: 30.0
-        heatFactor: 8.3333e-4
+        heatFactor: 1.0384e-3
       - tempMax: 100.0
-        heatFactor: 8.3333e-4
+        heatFactor: 1.0384e-3
   - index: 1
     description: living room
-    active: false
+    active: true
     maxTemp: 30.0
     tempBaseLevel: 20.0
     heatCharacteristics:
       - tempMax: 20.0
-        heatFactor: 8.3333e-4
+        heatFactor: 7.1031e-4
       - tempMax: 23.0
-        heatFactor: 8.3333e-4
+        heatFactor: 7.1031e-4
       - tempMax: 26.0
-        heatFactor: 8.3333e-4
+        heatFactor: 7.1031e-4
       - tempMax: 30.0
-        heatFactor: 8.3333e-4
+        heatFactor: 7.1031e-4
       - tempMax: 100.0
-        heatFactor: 8.3333e-4
+        heatFactor: 7.1031e-4
   - index: 2
     description: boys' room 1
-    active: false
+    active: true
     maxTemp: 30.0
     tempBaseLevel: 20.0
     heatCharacteristics:
@@ -60,7 +60,7 @@ circuits:
         heatFactor: 8.3333e-4
   - index: 3
     description: boys' room 2
-    active: false
+    active: true
     maxTemp: 30.0
     tempBaseLevel: 20.0
     heatCharacteristics:
@@ -76,7 +76,7 @@ circuits:
         heatFactor: 8.3333e-4
   - index: 4
     description: hall
-    active: false
+    active: true
     maxTemp: 30.0
     tempBaseLevel: 20.0
     heatCharacteristics:
@@ -92,23 +92,23 @@ circuits:
         heatFactor: 8.3333e-4
   - index: 5
     description: office room
-    active: false
+    active: true
     maxTemp: 30.0
     tempBaseLevel: 20.0
     heatCharacteristics:
       - tempMax: 20.0
-        heatFactor: 8.3333e-4
+        heatFactor: 6.5e-4
       - tempMax: 23.0
-        heatFactor: 8.3333e-4
+        heatFactor: 6.5e-4
       - tempMax: 26.0
-        heatFactor: 8.3333e-4
+        heatFactor: 6.5e-4
       - tempMax: 30.0
-        heatFactor: 8.3333e-4
+        heatFactor: 6.5e-4
       - tempMax: 100.0
-        heatFactor: 8.3333e-4
+        heatFactor: 6.5e-4
   - index: 6
     description: our bedroom
-    active: false
+    active: true
     maxTemp: 30.0
     tempBaseLevel: 20.0
     heatCharacteristics:
@@ -124,39 +124,39 @@ circuits:
         heatFactor: 8.3333e-4
   - index: 7
     description: our bathroom
-    active: false
+    active: true
     maxTemp: 40.0
     tempBaseLevel: 20.0
     heatCharacteristics:
       - tempMax: 20.0
-        heatFactor: 8.3333e-4
+        heatFactor: 9.0074e-4
       - tempMax: 23.0
-        heatFactor: 8.3333e-4
+        heatFactor: 9.0074e-4
       - tempMax: 26.0
-        heatFactor: 8.3333e-4
+        heatFactor: 9.0074e-4
       - tempMax: 30.0
-        heatFactor: 8.3333e-4
+        heatFactor: 9.0074e-4
       - tempMax: 100.0
-        heatFactor: 8.3333e-4
+        heatFactor: 9.0074e-4
   - index: 8
     description: bathroom
-    active: false
+    active: true
     maxTemp: 40.0
     tempBaseLevel: 20.0
     heatCharacteristics:
       - tempMax: 20.0
-        heatFactor: 8.3333e-4
+        heatFactor: 1.0102e-3
       - tempMax: 23.0
-        heatFactor: 8.3333e-4
+        heatFactor: 1.0102e-3
       - tempMax: 26.0
-        heatFactor: 8.3333e-4
+        heatFactor: 1.0102e-3
       - tempMax: 30.0
-        heatFactor: 8.3333e-4
+        heatFactor: 1.0102e-3
       - tempMax: 100.0
-        heatFactor: 8.3333e-4
+        heatFactor: 1.0102e-3
   - index: 9
     description: technical room
-    active: false
+    active: true
     maxTemp: 35.0
     tempBaseLevel: 20.0
     heatCharacteristics:
