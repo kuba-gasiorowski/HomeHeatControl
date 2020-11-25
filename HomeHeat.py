@@ -105,7 +105,7 @@ def get_heating_period(heat_level, current_temp, max_temp, base_level, heat_char
         temp_max_a = elem_a['tempMax']
         temp_max_b = elem_b['tempMax']
         heat_factor = elem_b['heatFactor']
-        if desired_temp >= temp_max_a:
+        if desired_temp >= temp_max_a and current_temp < temp_max_b:
             tb = min(desired_temp, temp_max_b)
             ta = max(current_temp, temp_max_a)
             heat_period += (tb - ta) / heat_factor
