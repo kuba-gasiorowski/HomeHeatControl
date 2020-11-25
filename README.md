@@ -38,18 +38,30 @@ and the measurement channels are connected between the known resistor and the NT
 figure below presents the schema of the temperature measurement part. The specific thermistor is powered only
 during measurement time.
 
+![Sensor connection diagram](diagrams/HomeHeat-Sensor.png)
+
 ### Heating circuits switching
 The actual heating is switched on and off by the relays organized in two boards - one with 8 relays,
 second with 4 relays (2 are used). Those are relays powered with 5VDC from the power supply - it supplies
 both RPi (via 5V and GND PINs) and relay boards and controlled with 3.3VDC from dedicated RPi GPIO PINs.
-These relays does not directly open the heating circuits, but they control high-current relays with 230VAC.
+These relays does not directly open the heating circuits, but they control high-current connectors with 230VAC.
+
+![Sensor connection diagram](diagrams/HomeHeat-Relays.png)
+
+Each IN*i* input on the diagram opens the relay connected to appropriate connector controlling the specific heating
+circuit.
 
 ## Software part
 ### General rules
 Taking into account the average external temperature (average from recent ca. 24 hours) the system computes the
 desired temperature level of each floor. This temperature is to be reached at the end of heating period. Because
 of two-zone tariff, the heating may be switched only during 2nd (cheap) tariff. There is night part of 2nd zone
-and day part (22-7 and 13-16 appropriately).
+and day part (22-7 and 13-16 appropriately). The following parameters define the 2nd tariff boundaries, each
+as HH-mm-ss (example: 22:01:00)
+* `nightStartTime` - the start time of the night zone
+* `nightEndTime` - the end time of the night zone 
+* `dayStartTime` - the start time of the day zone
+* `dayEndTime` - the end time of the day zone
 
 The application computes the heating level of heating based on external temperature. The following parameters
 define the level:
@@ -59,3 +71,37 @@ define the level:
    be set to this level
 
 The diagram below describes the levels.
+
+![Sensor connection diagram](diagrams/HomeHeat-HeatLevel.png)
+
+
+### Controlling temperature in a specific room
+Having the heating level, the application tries to switch the heating in the way, that the desired temperature is reached at
+the end of the 2nd tariff zone period (night or day). The desired temperature in the reference to the base temperature,
+defined as general parameter `tempBaseLevel`. For each heating circuit there's specific maximum temperature defined by
+the parameter `maxTemp`. Having those parameters, the desired temperature is computed as:
+`desired temperature = tempBaseLevel + heating level * (maxTemp - tempBaseLevel)`
+The heating characteristics defined by complex parameter `heatCharacteristics` define how fast the temperature of the
+specific circuit grows when the heating is on. Those characteristics are linear within a defined segments. For example:
+
+    heatCharacteristics:
+      - tempMax: 20.0
+        heatFactor: 8.3333e-4
+      - tempMax: 23.0
+        heatFactor: 9.4242-4
+      - tempMax: 26.0
+        heatFactor: 1.0e-3
+      - tempMax: 30.0
+        heatFactor: 1.1e-3
+      - tempMax: 100.0
+        heatFactor: 1.2e-3
+This means:
+1. Below 20 Celsius grades the temperature grows 8.3333e-4 grades per second
+1. Between 20 and 23 grades the temperature grows 9.4242-4 grades per second
+1. Between 23 and 26 grades the temperature grows 1.0e-3 grades per second
+1. Between 26 and 30 grades the temperature grows 1.1e-3 grades per second
+1. Over 30 (actually between 30 and 100 grades) the temperature grows 1.2e-3 grades per second
+
+Each circuit has parameter `active` - when set to false, the circuit won't be switched on.
+
+Additional parameter `descritpion` - defines the name (informational only) of the heating circuit.
