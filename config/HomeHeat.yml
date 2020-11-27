@@ -82,15 +82,15 @@ circuits:
     tempBaseLevel: 20.0
     heatCharacteristics:
       - tempMax: 20.0
-        heatFactor: 8.3333e-4
+        heatFactor: 6.8e-4
       - tempMax: 23.0
-        heatFactor: 8.3333e-4
+        heatFactor: 6.8e-4
       - tempMax: 26.0
-        heatFactor: 8.3333e-4
+        heatFactor: 6.8e-4
       - tempMax: 30.0
-        heatFactor: 8.3333e-4
+        heatFactor: 6.8e-4
       - tempMax: 100.0
-        heatFactor: 8.3333e-4
+        heatFactor: 6.8e-4
   - index: 5
     description: office room
     active: true
@@ -142,8 +142,8 @@ circuits:
   - index: 8
     description: bathroom
     active: true
-    maxTemp: 40.0
-    tempBaseLevel: 20.0
+    maxTemp: 35.0
+    tempBaseLevel: 15.0
     heatCharacteristics:
       - tempMax: 20.0
         heatFactor: 1.0102e-3
