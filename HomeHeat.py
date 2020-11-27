@@ -1,57 +1,67 @@
-#/usr/bin/env python3
+# /usr/bin/env python3
 
-import atexit
-import math
-import yaml
 import RPi.GPIO as GPIO
-import time
+import adafruit_ads1x15.ads1115 as ADS
+import atexit
 import board
 import busio
-import adafruit_ads1x15.ads1115 as ADS
-from adafruit_ads1x15.analog_in import AnalogIn
 import datetime
 import logging
 import logging.config
+import math
+import socket
+import struct
+import sys
+import time
+import yaml
+from adafruit_ads1x15.analog_in import AnalogIn
 
 # Reference voltage for thermistor resistance measurements
-REF_VOLTAGE=3.3
+REF_VOLTAGE = 3.3
 # Factors for Steinhart-Hart equation
-NTC_A_FACTOR=0.0012797372847331715
-NTC_B_FACTOR=0.00026335882652276787
-NTC_C_FACTOR=1.6897560208446226e-7
+NTC_A_FACTOR = 0.0012797372847331715
+NTC_B_FACTOR = 0.00026335882652276787
+NTC_C_FACTOR = 1.6897560208446226e-7
 
-DAY_SECONDS=86400
+DAY_SECONDS = 86400
 
-TEMP_MIN=-20.0
-TEMP_MIN_EXT=-50.0
+TEMP_MIN = -20.0
+TEMP_MIN_EXT = -50.0
 
-TEMP_MAX=100.0
-TEMP_MAX_EXT=60.0
+TEMP_MAX = 100.0
+TEMP_MAX_EXT = 60.0
+
+
+class MeasurementException(Exception):
+    pass
+
 
 def get_temperature(sensor_input, sensor_map_tab):
     """
     Gets the temperature reported by the sensor. Using
     Steinhart-Hart equation to convert the resistance of the
     thermistor to the temperature value (in celsius grades)
-    :param: sensor_input: the sensor id
-    :param: sensor_map_tab: The sensor table each with ADS channel, GPIO pin to provide supply for measurement, the
+    :param sensor_input: the sensor id
+    :param sensor_map_tab: The sensor table each with ADS channel, GPIO pin to provide supply for measurement, the
         reference resistor value
     :return: the temperature in celsius grades (float)
     """
     sensor_obj = sensor_map_tab[sensor_input]
     GPIO.output(sensor_obj[1], GPIO.HIGH)
     time.sleep(2)
-    v0_0 = sensor_obj[0].voltage
-    v0_1 = sensor_obj[0].voltage
-    v0_2 = sensor_obj[0].voltage
-    v0 = (v0_0 + v0_1 + v0_2)/3
-    GPIO.output(sensor_obj[1], GPIO.LOW)
-    r1 = sensor_obj[2]
-    if v0 == REF_VOLTAGE:
-        v0 = REF_VOLTAGE - 1e-4
-    thermistor_resistance = (r1*v0)/(REF_VOLTAGE - v0)
-    log_tr = math.log(thermistor_resistance)
-    return (1.0 / (NTC_A_FACTOR + NTC_B_FACTOR * log_tr + NTC_C_FACTOR * log_tr * log_tr * log_tr)) - 273.15
+    try:
+        v0_0 = sensor_obj[0].voltage
+        v0_1 = sensor_obj[0].voltage
+        v0_2 = sensor_obj[0].voltage
+        v0 = (v0_0 + v0_1 + v0_2) / 3
+        r1 = sensor_obj[2]
+        if v0 == REF_VOLTAGE:
+            v0 = REF_VOLTAGE - 1e-4
+        thermistor_resistance = (r1 * v0) / (REF_VOLTAGE - v0)
+        log_tr = math.log(thermistor_resistance)
+        return (1.0 / (NTC_A_FACTOR + NTC_B_FACTOR * log_tr + NTC_C_FACTOR * log_tr * log_tr * log_tr)) - 273.15
+    finally:
+        GPIO.output(sensor_obj[1], GPIO.LOW)
 
 
 def calculate_avg_ext_temperature(current_temperature, hist_temp_array):
@@ -65,7 +75,8 @@ def calculate_avg_ext_temperature(current_temperature, hist_temp_array):
     if len(hist_temp_array) >= 1440:
         del hist_temp_array[0]
     hist_temp_array.append(current_temperature)
-    return math.fsum(hist_temp_array)/len(hist_temp_array)
+    return math.fsum(hist_temp_array) / len(hist_temp_array)
+
 
 def get_ext_temperature_level(avg_temp, ext_max_temp, ext_min_temp, ext_start_threshold):
     """
@@ -80,7 +91,9 @@ def get_ext_temperature_level(avg_temp, ext_max_temp, ext_min_temp, ext_start_th
         return 0.0
     if avg_temp < ext_min_temp:
         return 1.0
-    return ((ext_max_temp - ext_start_threshold*ext_min_temp)/(1 - ext_start_threshold) - avg_temp)/((ext_max_temp - ext_start_threshold*ext_min_temp)/(1 - ext_start_threshold) - ext_min_temp)
+    return ((ext_max_temp - ext_start_threshold * ext_min_temp) / (1 - ext_start_threshold) - avg_temp) / (
+                (ext_max_temp - ext_start_threshold * ext_min_temp) / (1 - ext_start_threshold) - ext_min_temp)
+
 
 def get_heating_period(heat_level, day_period, current_temp, base_level, circuit_data):
     """
@@ -121,11 +134,11 @@ def get_heating_period(heat_level, day_period, current_temp, base_level, circuit
     n = len(heat_characteristics) - 2
     while n >= 0:
         elem_a = heat_characteristics[n]
-        elem_b = heat_characteristics[n+1]
+        elem_b = heat_characteristics[n + 1]
         temp_max_a = elem_a['tempMax']
         temp_max_b = elem_b['tempMax']
         heat_factor = elem_b['heatFactor']
-        if desired_temp >= temp_max_a:
+        if desired_temp >= temp_max_a and current_temp < temp_max_b:
             tb = min(desired_temp, temp_max_b)
             ta = max(current_temp, temp_max_a)
             heat_period += (tb - ta) / heat_factor
@@ -135,6 +148,7 @@ def get_heating_period(heat_level, day_period, current_temp, base_level, circuit
     if current_temp < heat_characteristics[0]['tempMax']:
         heat_period += (temp_max_b - current_temp) / heat_factor
     return heat_period, desired_temp
+
 
 def parse_time(time_str):
     """
@@ -154,13 +168,15 @@ def parse_time(time_str):
         sec = 0
     return datetime.time(hour, min, sec)
 
+
 def get_seconds(ts):
     """
     Converts the time object to number of seconds from beginning of the day
     :param ts: the time object
     :return: the number of seconds from beginning of the day
     """
-    return ts.second + 60*ts.minute + 3600*ts.hour
+    return ts.second + 60 * ts.minute + 3600 * ts.hour
+
 
 def get_day_period(current_timestamp, config):
     """
@@ -186,56 +202,67 @@ def get_day_period(current_timestamp, config):
     else:
         return 0, 0, 0
 
+
 def reset_circuits(circuit_table):
     """
     Resets all heating circuits
-    :param: circuit_table: The table with circuits containing table element with gpio PIN and its state
+    :param circuit_table: The table with circuits containing table element with gpio PIN and its state
     """
     for elem in circuit_table:
         GPIO.output(elem[0], GPIO.LOW)
         elem[1] = GPIO.LOW
         time.sleep(1.0)
 
+
+def initialize_ads(ads_id, i2c_object, ads_list, sensor_setup_list, sensor_map_list):
+    """
+    Initialize the given ADS1115 module and fills in all related AnalogIn objects in
+    the sensor_map_data table
+    :param ads_id: The ADS1115 ID. The I2C address of ADS module is 0x48+ads_id
+    :param i2c_object: The I2C object
+    :param ads_list: The ADS module list. The list element at index ads_id receives newly created ADS1115 object
+    :param sensor_setup_list: The sensor setup data table - each element contains inner table with ADS module Id,
+                              the ADS input id of the sensor, the GPIO PIN providing the voltage for measurement of
+                              this sensor, the value of the reference resistor
+    :param sensor_map_list: The sensor map list - the element of this list contains inner list with the ADS1115 AnalogIn
+                            object (created by this function), GPIO PIN providing the voltage for this sensor, the
+                            value of the reference resitor
+    """
+    try:
+        ads_list[ads_id] = ADS.ADS1115(i2c_object, address=0x48 + ads_id)
+        for index, sensor_data in enumerate(sensor_setup_list):
+            if sensor_data[0] == ads_id:
+                sensor_map_list[index][0] = AnalogIn(ads_list[ads_id], sensor_setup_list[index][1])
+    except (IOError, ValueError):
+        logger.error("Could not initialize ADS",  ads_id, " address ", (0x48 + ads_id), exc_info=True)
+
+
 @atexit.register
 def cleanup():
     reset_circuits(circuits)
     GPIO.cleanup()
 
-with open('config/HomeHeat_logging.yml','r') as f:
+
+with open('config/HomeHeat_logging.yml', 'r') as f:
     logging_config = yaml.load(f, Loader=yaml.FullLoader)
     logging.config.dictConfig(logging_config)
 logger = logging.getLogger()
 
 GPIO.setmode(GPIO.BCM)
-GPIO.setup([14, 15, 4, 17, 11, 8, 7, 9, 10, 23, 22], GPIO.OUT)
-gpio_circuit = [26, 19, 5, 6, 13, 25, 12, 16, 20, 21]
-GPIO.setup(gpio_circuit, GPIO.OUT)
-
-i2c = busio.I2C(board.SCL, board.SDA)
-time.sleep(1.0)
-ads0 = ADS.ADS1115(i2c, address=0x48)
-ads1 = ADS.ADS1115(i2c, address=0x49)
-ads2 = ADS.ADS1115(i2c, address=0x4A)
-
-"""
-  Sensor monitoring the room - assignment to ADC1115 module/input
-  The values are: ads channel instance, related output on this ads, gpio to provide
-  the voltage for resistance measurement, the resistor value in ohm
-"""
-sensor_map = [
-    [AnalogIn(ads0, ADS.P3), 14, 5600.0], # index 0 is external temperature sensor! -> uses PIN TxD
-    [AnalogIn(ads0, ADS.P2), 15, 2200.0], # -> uses PIN RxD
-    [AnalogIn(ads0, ADS.P1), 4, 2200.0], # -> uses PIN GP4
-    [AnalogIn(ads0, ADS.P0), 17, 2200.0], # -> uses PIN GP17
-    [AnalogIn(ads2, ADS.P3), 11, 2200.0], # -> uses PIN SCLK
-    [AnalogIn(ads2, ADS.P2), 8, 2200.0], # -> uses PIN CE0
-    [AnalogIn(ads2, ADS.P1), 7, 2200.0], # -> uses PIN CE1
-    # ads2, P0 -> not used!
-    [AnalogIn(ads1, ADS.P3), 9, 2200.0], # -> uses PIN MISO
-    [AnalogIn(ads1, ADS.P2), 10, 2200.0], # -> uses PIN MOSI
-    [AnalogIn(ads1, ADS.P1), 23, 2200.0], # -> uses PIN GP23
-    [AnalogIn(ads1, ADS.P0), 22, 2200.0] # -> uses PIN GP22
+sensor_setup = [
+    [0, ADS.P3, 14, 5600.0],  # external temperature sensor -> PIN TxD
+    [0, ADS.P2, 15, 2200.0],  # -> uses PIN RxD
+    [0, ADS.P1, 4, 2200.0],  # -> uses PIN GP4
+    [0, ADS.P0, 17, 2200.0],  # -> uses PIN GP17
+    [2, ADS.P3, 11, 2200.0],  # -> uses PIN SCLK
+    [2, ADS.P2, 8, 2200.0],  # -> uses PIN CE0
+    [2, ADS.P1, 7, 2200.0],  # -> uses PIN CE1
+    [1, ADS.P3, 9, 2200.0],  # -> uses PIN MISO
+    [1, ADS.P2, 10, 2200.0],  # -> uses PIN MOSI
+    [1, ADS.P1, 23, 2200.0],  # -> uses PIN GP23
+    [1, ADS.P0, 22, 2200.0]  # -> uses PIN GP22
 ]
+GPIO.setup([el[2] for el in sensor_setup], GPIO.OUT)
 
 circuits = [
     [26, GPIO.LOW],
@@ -250,10 +277,44 @@ circuits = [
     [21, GPIO.LOW]
 ]
 
+GPIO.setup([el[0] for el in circuits], GPIO.OUT)
+
+i2c = busio.I2C(board.SCL, board.SDA)
+time.sleep(1.0)
+
+"""
+  Sensor monitoring the room - assignment to ADC1115 module/input
+  The values are: ads channel instance, related output on this ads, gpio to provide
+  the voltage for resistance measurement, the resistor value in ohm
+"""
+ads = [None, None, None]
+sensor_map = []
+for i in sensor_setup:
+    sensor_map.append([None, sensor_setup[2], sensor_setup[3]])
+for i in 0, 1, 2:
+    initialize_ads(i, i2c, ads, sensor_setup, sensor_map)
+
+# sensor_map = [
+#     [AnalogIn(ads0, ADS.P3), 14, 5600.0], # index 0 is external temperature sensor! -> uses PIN TxD
+#     [AnalogIn(ads0, ADS.P2), 15, 2200.0], # -> uses PIN RxD
+#     [AnalogIn(ads0, ADS.P1), 4, 2200.0], # -> uses PIN GP4
+#     [AnalogIn(ads0, ADS.P0), 17, 2200.0], # -> uses PIN GP17
+#     [AnalogIn(ads2, ADS.P3), 11, 2200.0], # -> uses PIN SCLK
+#     [AnalogIn(ads2, ADS.P2), 8, 2200.0], # -> uses PIN CE0
+#     [AnalogIn(ads2, ADS.P1), 7, 2200.0], # -> uses PIN CE1
+#     # ads2, P0 -> not used!
+#     [AnalogIn(ads1, ADS.P3), 9, 2200.0], # -> uses PIN MISO
+#     [AnalogIn(ads1, ADS.P2), 10, 2200.0], # -> uses PIN MOSI
+#     [AnalogIn(ads1, ADS.P1), 23, 2200.0], # -> uses PIN GP23
+#     [AnalogIn(ads1, ADS.P0), 22, 2200.0] # -> uses PIN GP22
+# ]
+
+management_interface = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
 cfg = []
 curr_day_period = 0
 while True:
     curr_timestamp = datetime.datetime.now()
+    management_data = struct.pack('d', curr_timestamp.timestamp())
     with open('config/HomeHeat.yml', 'r') as cfg_file:
         cfg = yaml.load(cfg_file, Loader=yaml.FullLoader)
     logger.setLevel(cfg['logLevel'])
@@ -263,68 +324,107 @@ while True:
             logger.info("Heating period finished %d", curr_day_period)
             reset_circuits(circuits)
     curr_day_period = day_period
-    ext_temp = get_temperature(0, sensor_map)
-    logger.info("External temperature: %f", ext_temp)
-    ext_temp_array = []
+    management_data += struct.pack('c', day_period)
     try:
-        with open('config/ExtTemperatures.txt','r') as ext_temp_file:
-            for line in ext_temp_file:
-                ext_temp_array.append(float(line))
-    except Exception:
-        pass
-    ext_temp_avg = calculate_avg_ext_temperature(ext_temp, ext_temp_array)
-    if ext_temp <= TEMP_MIN_EXT or ext_temp >= TEMP_MAX_EXT:
-        logger.warning("External temperature: %f outside of reasonable level, check sensor connection!!!", ext_temp)
-        reset_circuits(circuits)
-        continue
-    try:
-        with open('config/ExtTemperatures.txt','w') as ext_temp_file:
-            for i in ext_temp_array:
-                ext_temp_file.write('%f\n' % i)
-    except Exception:
-        pass
-    heating_level = get_ext_temperature_level(ext_temp_avg, cfg['extMaxTemp'], cfg['extMinTemp'], cfg['extStartThreshold'])
-    logger.debug("Avg external temperature: %f, level: %f", ext_temp_avg, heating_level)
-    if day_period == 0:
-        logger.debug("Outside of heating period")
-    circuit_temp = []
-    for index, sensor in enumerate(sensor_map[1:]):
-        temp = get_temperature(index+1, sensor_map)
-        circuit_temp.append(temp)
-        heat_status_string = ""
-        if day_period > 0:
-            heat_status_string = " (" + ("ON" if circuits[index][1] == GPIO.HIGH else "OFF") + ")"
-        logger.debug("Temperature in room '%s'(%d): %f%s",
-                    cfg['circuits'][index]['description'], index, temp, heat_status_string)
-        if temp <= TEMP_MIN or temp >= TEMP_MAX:
-            logger.warning("Temperature in room '%s'(%d): %f outside of reasonable level, check sensor connection!!!",
-                           cfg['circuits'][index]['description'], index, temp)
-            circuits[index][1] = GPIO.LOW
-            GPIO.output(circuits[index][0], GPIO.LOW)
+        if ads[sensor_setup[0][0]] is None:
+            initialize_ads(sensor_setup[0][0], i2c, ads, sensor_setup, sensor_map)
+        if ads[sensor_setup[0][0]] is not None:
+            try:
+                ext_temp = get_temperature(0, sensor_map)
+            except (IOError, ValueError) as e:
+                logger.error("Could not measure external temperature", exc_info=True)
+                ads[sensor_setup[0][0]] = None
+                raise MeasurementException("ADS (ext) reading error", e)
+        else:
+            raise MeasurementException("ADS (ext) not initiliazed")
+
+        logger.info("External temperature: %f", ext_temp)
+        if ext_temp <= TEMP_MIN_EXT or ext_temp >= TEMP_MAX_EXT:
+            logger.warning("External temperature: %f outside of reasonable level, check sensor connection!!!", ext_temp)
+            reset_circuits(circuits)
             continue
+        ext_temp_array = []
+        try:
+            with open('config/ExtTemperatures.txt', 'r') as ext_temp_file:
+                for line in ext_temp_file:
+                    ext_temp_array.append(float(line))
+        except IOError:
+            pass
+        ext_temp_avg = calculate_avg_ext_temperature(ext_temp, ext_temp_array)
+        management_data += struct.pack('2d', ext_temp, ext_temp_avg)
+        try:
+            with open('config/ExtTemperatures.txt', 'w') as ext_temp_file:
+                for i in ext_temp_array:
+                    ext_temp_file.write('%f\n' % i)
+        except IOError:
+            pass
+        heating_level = get_ext_temperature_level(ext_temp_avg, cfg['extMaxTemp'], cfg['extMinTemp'],
+                                                  cfg['extStartThreshold'])
+        logger.debug("Avg external temperature: %f, level: %f", ext_temp_avg, heating_level)
         if day_period == 0:
-            continue
-        if not cfg['circuits'][index]['active']:
-            log_str = "Circuit %d isn't active"
-            if circuits[index][1] != GPIO.LOW:
+            logger.debug("Outside of heating period")
+        circuit_temp = []
+        for index, sensor in enumerate(sensor_map[1:]):
+            if ads[sensor_setup[index + 1][0]] is None:
+                initialize_ads(sensor_setup[index + 1][0], i2c, ads, sensor_setup, sensor_map)
+            if ads[sensor_setup[index + 1][0]] is not None:
+                try:
+                    temp = get_temperature(index + 1, sensor_map)
+                except (IOError, ValueError):
+                    logger.error("Could not measure temperature circuit: ", index, exc_info=True)
+                    ads[sensor_setup[index + 1][0]] = None
+                    circuits[index][1] = GPIO.LOW
+                    GPIO.output(circuits[index][0], GPIO.LOW)
+                    continue
+            else:
                 circuits[index][1] = GPIO.LOW
                 GPIO.output(circuits[index][0], GPIO.LOW)
-                log_str = log_str + ", heating switching off"
-            logger.info(log_str, index)
-            continue
-        heating_period, desired_temp =\
-            get_heating_period(heating_level, day_period, temp, cfg['tempBaseLevel'], cfg['circuits'][index])
-        if heating_period <= 0 and circuits[index][1] != GPIO.LOW:
-            circuits[index][1] = GPIO.LOW
-            GPIO.output(circuits[index][0], GPIO.LOW)
-            logger.info("Desired temp reached for circuit %s [%d] = %f" % (cfg['circuits'][index]['description'], index, temp))
-        elif heating_period > 0 and heating_period >= time_to_end and circuits[index][1] == GPIO.LOW:
-            circuits[index][1] = GPIO.HIGH
-            GPIO.output(circuits[index][0], GPIO.HIGH)
-            logger.info(
-                "Starting heating circuit %s [%d] = %f, %d to reach %f" % (cfg['circuits'][index]['description'], index, temp, heating_period, desired_temp))
+                continue
+            circuit_temp.append(temp)
+            heat_status_string = ""
+            if day_period > 0:
+                heat_status_string = " (" + ("ON" if circuits[index][1] == GPIO.HIGH else "OFF") + ")"
+            logger.debug("Temperature in room '%s'(%d): %f%s",
+                         cfg['circuits'][index]['description'], index, temp, heat_status_string)
+            if temp <= TEMP_MIN or temp >= TEMP_MAX:
+                logger.warning("Temperature in room '%s'(%d): %f outside of reasonable level, check sensor connection!!!",
+                               cfg['circuits'][index]['description'], index, temp)
+                circuits[index][1] = GPIO.LOW
+                GPIO.output(circuits[index][0], GPIO.LOW)
+                continue
+            management_data += struct.pack('b', index)
+            management_data += struct.pack('d', temp)
+            management_data += struct.pack('?', (circuits[index][1] == GPIO.HIGH))
+            if day_period == 0:
+                continue
+            if not cfg['circuits'][index]['active']:
+                log_str = "Circuit %d isn't active"
+                if circuits[index][1] != GPIO.LOW:
+                    circuits[index][1] = GPIO.LOW
+                    GPIO.output(circuits[index][0], GPIO.LOW)
+                    log_str = log_str + ", heating switching off"
+                logger.info(log_str, index)
+                continue
+            heating_period, desired_temp = \
+                get_heating_period(heating_level, day_period, temp, cfg['tempBaseLevel'], cfg['circuits'][index])
+            if heating_period <= 0 and circuits[index][1] != GPIO.LOW:
+                circuits[index][1] = GPIO.LOW
+                GPIO.output(circuits[index][0], GPIO.LOW)
+                logger.info(
+                    "Desired temp reached for circuit %s [%d] = %f" % (cfg['circuits'][index]['description'], index, temp))
+            elif heating_period > 0 and heating_period >= time_to_end and circuits[index][1] == GPIO.LOW:
+                circuits[index][1] = GPIO.HIGH
+                GPIO.output(circuits[index][0], GPIO.HIGH)
+                logger.info(
+                    "Starting heating circuit %s [%d] = %f, %d to reach %f" % (
+                    cfg['circuits'][index]['description'], index, temp, heating_period, desired_temp))
+    except MeasurementException:
+        pass
     time_to_sleep = 60.0 - datetime.datetime.now().timestamp() + curr_timestamp.timestamp()
     if time_to_sleep < 0:
         logger.warning("No time left after cycle: %f" % time_to_sleep)
         time_to_sleep = 0.0
+    if cfg['managementServer'] is not None:
+        management_server_address = cfg['managementServer'].split(':')
+        management_interface.sendto(management_data, (management_server_address[0], int(management_server_address[1])))
     time.sleep(time_to_sleep)
