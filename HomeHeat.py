@@ -262,6 +262,7 @@ sensor_setup = [
     [1, ADS.P1, 23, 2200.0],  # -> uses PIN GP23
     [1, ADS.P0, 22, 2200.0]  # -> uses PIN GP22
 ]
+
 GPIO.setup([el[2] for el in sensor_setup], GPIO.OUT)
 
 circuits = [
@@ -290,7 +291,7 @@ time.sleep(1.0)
 ads = [None, None, None]
 sensor_map = []
 for i in sensor_setup:
-    sensor_map.append([None, sensor_setup[2], sensor_setup[3]])
+    sensor_map.append([None, i[2], i[3]])
 for i in 0, 1, 2:
     initialize_ads(i, i2c, ads, sensor_setup, sensor_map)
 
@@ -324,7 +325,7 @@ while True:
             logger.info("Heating period finished %d", curr_day_period)
             reset_circuits(circuits)
     curr_day_period = day_period
-    management_data += struct.pack('c', day_period)
+    management_data += struct.pack('c', day_period.to_bytes(1, byteorder='little'))
     try:
         if ads[sensor_setup[0][0]] is None:
             initialize_ads(sensor_setup[0][0], i2c, ads, sensor_setup, sensor_map)
@@ -392,7 +393,7 @@ while True:
                 circuits[index][1] = GPIO.LOW
                 GPIO.output(circuits[index][0], GPIO.LOW)
                 continue
-            management_data += struct.pack('b', index)
+            management_data += struct.pack('c', index.to_bytes(1, byteorder='little'))
             management_data += struct.pack('d', temp)
             management_data += struct.pack('?', (circuits[index][1] == GPIO.HIGH))
             if day_period == 0:
