@@ -1,4 +1,4 @@
-# /usr/bin/env python3
+#!/usr/bin/env python3
 
 import RPi.GPIO as GPIO
 import adafruit_ads1x15.ads1115 as ADS
