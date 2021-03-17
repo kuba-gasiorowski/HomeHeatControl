@@ -372,7 +372,7 @@ while True:
                 try:
                     temp = get_temperature(index + 1, sensor_map)
                 except (IOError, ValueError):
-                    logger.error("Could not measure temperature circuit: ", index, exc_info=True)
+                    logger.error("Could not measure temperature circuit: %d", index, exc_info=True)
                     ads[sensor_setup[index + 1][0]] = None
                     circuits[index][1] = GPIO.LOW
                     GPIO.output(circuits[index][0], GPIO.LOW)
