@@ -34,6 +34,6 @@ public class ControllerConfigRepositoryImplTest {
         Assert.assertEquals(-18.0, result.getExtMinTemp(), 0.01);
         Assert.assertEquals(12.0, result.getExtMaxTemp(), 0.01);
         Assert.assertEquals(10, result.getCircuits().size());
-        jacksonConfiguration.getObjectMapper().writeValue(System.out, result);
+        jacksonConfiguration.getHeatControllerObjectMapper().writeValue(System.out, result);
     }
 }

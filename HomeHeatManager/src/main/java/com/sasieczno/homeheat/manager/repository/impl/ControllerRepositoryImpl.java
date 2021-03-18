@@ -44,6 +44,7 @@ public class ControllerRepositoryImpl implements ControllerRepository {
                 } catch (InterruptedException e) {}
             }
         }, "ControllerCheck");
+        monitoringThread.start();
     }
 
     @PreDestroy

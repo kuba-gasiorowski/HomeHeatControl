@@ -1,6 +1,6 @@
 package com.sasieczno.homeheat.manager.service.impl;
 
-import com.sasieczno.homeheat.manager.model.HeatStatus;
+import com.sasieczno.homeheat.manager.model.HeatingData;
 import com.sasieczno.homeheat.manager.model.HeatingPeriod;
 import org.junit.Assert;
 import org.junit.Test;
@@ -20,7 +20,7 @@ public class ControllerStatusServiceImplTests {
 
         // period = night
         obj.buf[8] = 0x01;
-        HeatStatus hs = obj.decodeManagementMessage(9);
+        HeatingData hs = obj.decodeManagementMessage(9);
         Assert.assertEquals(1606295646886L, hs.getLastMessageTime().getTimeInMillis());
         Assert.assertEquals(HeatingPeriod.NIGHT, hs.getHeatingPeriod());
     }

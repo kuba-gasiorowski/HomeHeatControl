@@ -12,8 +12,9 @@ import java.time.LocalTime;
 
 @Configuration
 public class JacksonConfiguration {
-    @Bean
-    public ObjectMapper getObjectMapper() {
+
+    @Bean("yamlConfigObjectMapper")
+    public ObjectMapper getHeatControllerObjectMapper() {
         ObjectMapper mapper = new ObjectMapper(new YAMLFactory().enable(YAMLGenerator.Feature.MINIMIZE_QUOTES));
         mapper.findAndRegisterModules();
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
