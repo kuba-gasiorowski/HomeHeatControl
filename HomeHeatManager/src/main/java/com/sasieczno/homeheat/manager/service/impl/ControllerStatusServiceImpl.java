@@ -53,6 +53,7 @@ public class ControllerStatusServiceImpl implements ControllerStatusService {
         LOGGER.info("Stopping Controller Manager Service");
         running = false;
         try {
+            managementServerThread.interrupt();
             managementServerThread.join();
         } catch (InterruptedException e) {}
         LOGGER.info("Stopped Controller Manager Service");

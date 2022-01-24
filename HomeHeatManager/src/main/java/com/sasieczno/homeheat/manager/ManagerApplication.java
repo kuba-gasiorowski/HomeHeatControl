@@ -1,5 +1,6 @@
 package com.sasieczno.homeheat.manager;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -17,6 +18,7 @@ public class ManagerApplication {
 	@Bean
 	@Primary
 	public ObjectMapper getObjectMapper() {
-		return new ObjectMapper();
+		return new ObjectMapper()
+				.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 	}
 }

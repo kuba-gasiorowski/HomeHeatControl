@@ -1,5 +1,9 @@
 package com.sasieczno.homeheat.manager.model;
 
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 import java.util.Calendar;
 import java.util.LinkedList;
 
@@ -7,6 +11,9 @@ import java.util.LinkedList;
  * The class provides information delivered via management interface
  * by the heat controller process.
  */
+@Getter
+@Setter
+@NoArgsConstructor
 public class HeatingData {
     Calendar lastMessageTime;
     HeatingPeriod heatingPeriod;
@@ -15,74 +22,12 @@ public class HeatingData {
 
     LinkedList<CircuitData> circuits;
 
-    public Calendar getLastMessageTime() {
-        return lastMessageTime;
-    }
-
-    public void setLastMessageTime(Calendar lastMessageTime) {
-        this.lastMessageTime = lastMessageTime;
-    }
-
-    public HeatingPeriod getHeatingPeriod() {
-        return heatingPeriod;
-    }
-
-    public void setHeatingPeriod(HeatingPeriod heatingPeriod) {
-        this.heatingPeriod = heatingPeriod;
-    }
-
-    public double getExternalTemperature() {
-        return externalTemperature;
-    }
-
-    public void setExternalTemperature(double externalTemperature) {
-        this.externalTemperature = externalTemperature;
-    }
-
-    public double getAverageExternalTemperature() {
-        return averageExternalTemperature;
-    }
-
-    public void setAverageExternalTemperature(double averageExternalTemperature) {
-        this.averageExternalTemperature = averageExternalTemperature;
-    }
-
-    public LinkedList<CircuitData> getCircuits() {
-        return circuits;
-    }
-
-    public void setCircuits(LinkedList<CircuitData> circuits) {
-        this.circuits = circuits;
-    }
-
-
+    @Getter
+    @Setter
+    @NoArgsConstructor
     public static class CircuitData {
         int index;
         double temperature;
         boolean heating;
-
-        public int getIndex() {
-            return index;
-        }
-
-        public void setIndex(int index) {
-            this.index = index;
-        }
-
-        public double getTemperature() {
-            return temperature;
-        }
-
-        public void setTemperature(double temperature) {
-            this.temperature = temperature;
-        }
-
-        public boolean isHeating() {
-            return heating;
-        }
-
-        public void setHeating(boolean heating) {
-            this.heating = heating;
-        }
     }
 }

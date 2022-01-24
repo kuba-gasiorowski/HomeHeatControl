@@ -13,7 +13,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.util.Iterator;
 
 @Repository("ControllerConfigRepository")
 public class ControllerConfigRepositoryImpl implements ControllerConfigRepository {
@@ -27,28 +26,6 @@ public class ControllerConfigRepositoryImpl implements ControllerConfigRepositor
     JacksonConfiguration jacksonConfiguration;
 
     @Override
-    public void updateCircuitConfig(int circuitId, boolean active, float dayAdjust, float nightAdjust) {
-        ControllerConfig config = getConfig();
-        Iterator<ControllerConfig.Circuit> it = config.getCircuits().iterator();
-        while (it.hasNext()) {
-            ControllerConfig.Circuit circuit = it.next();
-            if (circuit.getIndex() == circuitId) {
-                LOGGER.debug("updateCircuitConfig: id={}, active={}, dayAdjust={}, nightAdjust={}",
-                        circuitId, active, dayAdjust, nightAdjust);
-                circuit.setActive(active);
-                circuit.setDayAdjust(dayAdjust);
-                circuit.setNightAdjust(nightAdjust);
-                try {
-                    saveConfig(config);
-                } catch (IOException e) {
-                    LOGGER.warn("updateCircuitConfig: could not save the file", e);
-                }
-                break;
-            }
-        }
-    }
-
-    @Override
     public boolean updateCircuitConfig(ControllerConfig.Circuit circuit) {
         boolean result = false;
         try {
@@ -58,10 +35,11 @@ public class ControllerConfigRepositoryImpl implements ControllerConfigRepositor
                 ControllerConfig.Circuit updatedCircuit = null;
                 for (int i = 0; i <= controllerConfig.getCircuits().size(); i++) {
                     if (controllerConfig.getCircuits().get(i).getIndex() == circuit.getIndex()) {
+                        updatedCircuit = controllerConfig.getCircuits().get(i);
                         LOGGER.debug("updateCircuitConfig: circuit id={)", circuit.getIndex());
                         result = true;
-                        controllerConfig.getCircuits().set(i, circuit);
-                        saveConfig(controllerConfig);
+                        updatedCircuit.copy(circuit);
+                        updateConfig(controllerConfig);
                         break;
                     }
                 }
@@ -84,11 +62,18 @@ public class ControllerConfigRepositoryImpl implements ControllerConfigRepositor
         }
     }
 
-    void saveConfig(ControllerConfig controllerConfig) throws IOException {
+    @Override
+    public boolean updateConfig(ControllerConfig controllerConfig) {
         File controllerConfigFile = new File(appConfig.controllerConfigFile);
         Path controllerConfigPath = controllerConfigFile.toPath();
-        Path tmpConfigPath = java.nio.file.Files.createTempFile(appConfig.controllerConfigFile, "tmp");
-        jacksonConfiguration.getHeatControllerObjectMapper().writeValue(tmpConfigPath.toFile(), controllerConfig);
-        Files.move(tmpConfigPath, controllerConfigPath, StandardCopyOption.ATOMIC_MOVE);
+        try {
+            Path tmpConfigPath = java.nio.file.Files.createTempFile(controllerConfigPath.getFileName().toString(), ".tmp");
+            jacksonConfiguration.getHeatControllerObjectMapper().writeValue(tmpConfigPath.toFile(), controllerConfig);
+            Files.move(tmpConfigPath, controllerConfigPath, StandardCopyOption.ATOMIC_MOVE);
+            return true;
+        } catch (IOException e) {
+            LOGGER.error("Could not update config file", e);
+            return false;
+        }
     }
 }

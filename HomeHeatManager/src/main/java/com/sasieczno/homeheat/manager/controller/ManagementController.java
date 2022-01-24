@@ -19,13 +19,14 @@ import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Calendar;
 import java.util.LinkedList;
 
-@RestController
+@RestController()
 public class ManagementController {
     public static final Logger LOGGER = LoggerFactory.getLogger(ManagementController.class);
 
@@ -41,7 +42,7 @@ public class ManagementController {
     @Autowired
     AppConfig appConfig;
 
-    @GetMapping(value = "/status", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(value = "api/status", produces = MediaType.APPLICATION_JSON_VALUE)
     public HeatStatus getStatus() {
         HeatStatus heatStatus = new HeatStatus();
         ControllerConfig controllerConfig = controllerConfigRepository.getConfig();
@@ -52,14 +53,38 @@ public class ManagementController {
         return heatStatus;
     }
 
-    @PostMapping(value = "/circuit/${id}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ControllerConfig.Circuit updateCircuit(@PathVariable("id") Integer id, ControllerConfig.Circuit circuit) {
+    @GetMapping(value = "api/config", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ControllerConfig getConfig() {
+        return controllerConfigRepository.getConfig();
+    }
+
+    @PostMapping(value = "api/config", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ControllerConfig updateConfig(@RequestBody ControllerConfig config) {
+        if (controllerConfigRepository.updateConfig(config)) {
+            return controllerConfigRepository.getConfig();
+        } else {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Could not save the config");
+        }
+    }
+
+    @GetMapping(value = "api/config/circuit/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ControllerConfig.Circuit getCircuit(@PathVariable("id") Integer id) {
+        for (ControllerConfig.Circuit circuit : controllerConfigRepository.getConfig().getCircuits()) {
+            if (circuit.getIndex() == id)
+                return circuit;
+        }
+        throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Circuit does not exist in the config: " + id);
+    }
+
+    @PostMapping(value = "api/config/circuit/{id}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ControllerConfig.Circuit updateCircuit(@PathVariable("id") Integer id, @RequestBody ControllerConfig.Circuit circuit) {
         if (controllerConfigRepository.updateCircuitConfig(circuit)) {
-            return circuit;
+            return getCircuit(id);
         } else {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Circuit does not exist in the config: " + id);
         }
     }
+
 
     @EventListener
     void onStartup(ApplicationReadyEvent event) {
@@ -119,7 +144,7 @@ public class ManagementController {
                     heatStatus.getCircuitStatuses().add(circuitStatus);
                 }
                 circuitStatus.setCircuitName(circuit.getDescription());
-                circuitStatus.setCircuitStatus(circuit.isActive());
+                circuitStatus.setCircuitStatus(circuit.getActive());
             }
         }
     }

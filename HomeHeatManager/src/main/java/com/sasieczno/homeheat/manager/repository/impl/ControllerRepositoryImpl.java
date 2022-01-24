@@ -50,6 +50,10 @@ public class ControllerRepositoryImpl implements ControllerRepository {
     @PreDestroy
     void destroy() {
         Systemd.disconnect();
+        try {
+            monitoringThread.interrupt();
+            monitoringThread.join();
+        } catch (InterruptedException e) {}
     }
 
     public HeatStatus getHeatStatus() {
