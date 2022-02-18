@@ -1,10 +1,10 @@
 package com.sasieczno.homeheat.manager.service.impl;
 
 import com.sasieczno.homeheat.manager.config.AppConfig;
-import com.sasieczno.homeheat.manager.model.CircuitStatus;
 import com.sasieczno.homeheat.manager.model.HeatingData;
 import com.sasieczno.homeheat.manager.model.HeatingPeriod;
 import com.sasieczno.homeheat.manager.service.ControllerStatusService;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,10 +19,39 @@ import java.net.SocketTimeoutException;
 import java.util.Calendar;
 import java.util.LinkedList;
 
+/**
+ * The service sets up the UDP server which listens to the datagrams containing
+ * the controller status payload. The payload format is (bytes):
+ * Mandatory part:
+ * <pre>
+ * |--0--|--1--|--2--|--3--|--4--|--5--|--6--|--7--|--8--|
+ * | <-------------------- TS -------------------> | HP  |
+ * </pre>
+ * Non-mandatory:
+ * <pre>
+ * |--9--|--10-|--11-|--12-|--13-|--14-|--15-|--16-|
+ * | <-------------------- TC -------------------> |
+ * |--17-|--18-|--19-|--20-|--21-|--22-|--23-|--24-|
+ * | <-------------------- AT -------------------> |
+ * </pre>
+ * For each circuit:
+ * <pre>
+ * |--n--|-n+1-|-n+2-|-n+3-|-n+4-|-n+5-|-n+6-|-n+7-|-n+8-|-n+9-|
+ * | CI  | <-------------------- CT -------------------> | CS  |
+ * </pre>
+ * <ul>
+ *     <li>TS (8 bytes): Message timestamp (unix style + fractional part)</li>
+ *     <li>HP (1 byte): Heating period: 0 (no heating), 1 (night), 2 (day)</li>
+ *     <li>TC (8 bytes): Current external temperature (double value)</li>
+ *     <li>AT (8 bytes): Average external temperature (double value)</li>
+ *     <li>CI (1 byte): Circuit index</li>
+ *     <li>CT (8 bytes): Circuit temperature (double value)</li>
+ *     <li>CS (8 bytes): Circuit status: 0 (off), 1 (on)</li>
+ * </ul>
+ */
+@Slf4j
 @Service
 public class ControllerStatusServiceImpl implements ControllerStatusService {
-
-    public static final Logger LOGGER = LoggerFactory.getLogger(ControllerStatusServiceImpl.class);
 
     @Autowired
     AppConfig appConfig;
@@ -36,10 +65,10 @@ public class ControllerStatusServiceImpl implements ControllerStatusService {
 
     @PostConstruct
     private void init() throws SocketException {
-        LOGGER.info("Initializing Controller Manager Service");
+        log.info("Initializing Controller Manager Service");
         heatingData = new HeatingData();
         managementUdpServer = new DatagramSocket(appConfig.udpManagerPort);
-        managementUdpServer.setSoTimeout(60000);
+        managementUdpServer.setSoTimeout(appConfig.udpManagerTimeout);
         running = true;
         managementServerThread = new Thread(() -> {
             processManagementMessage();
@@ -50,13 +79,14 @@ public class ControllerStatusServiceImpl implements ControllerStatusService {
 
     @PreDestroy
     private void stopService() {
-        LOGGER.info("Stopping Controller Manager Service");
+        log.info("Stopping Controller Manager Service");
         running = false;
         try {
+            managementUdpServer.close();
             managementServerThread.interrupt();
             managementServerThread.join();
         } catch (InterruptedException e) {}
-        LOGGER.info("Stopped Controller Manager Service");
+        log.info("Stopped Controller Manager Service");
     }
 
     @Override
@@ -69,12 +99,13 @@ public class ControllerStatusServiceImpl implements ControllerStatusService {
             DatagramPacket packet = new DatagramPacket(buf, buf.length);
             try {
                 managementUdpServer.receive(packet);
-                LOGGER.info("Received packet from: " + packet.getAddress().getCanonicalHostName());
+                log.debug("Received packet from: " + packet.getAddress().getCanonicalHostName());
                 heatingData = decodeManagementMessage(packet.getLength());
             } catch (SocketTimeoutException e) {
-                LOGGER.info("Timeout on Management UDP Socket");
+                log.info("Timeout on Management UDP Socket");
             } catch (Exception e) {
-
+                if (running)
+                    log.warn("Exception on Management UDP Socket", e);
             }
         }
     }

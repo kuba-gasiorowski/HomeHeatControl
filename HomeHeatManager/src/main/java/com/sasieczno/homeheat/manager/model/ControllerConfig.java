@@ -23,6 +23,37 @@ public class ControllerConfig {
     String managementServer;
     ArrayList<Circuit> circuits;
 
+    public void copy(ControllerConfig cfg) {
+        if (cfg.getExtMinTemp() != null)
+            extMinTemp = cfg.getExtMinTemp();
+        if (cfg.getExtMaxTemp() != null)
+            extMaxTemp = cfg.getExtMaxTemp();
+        if (cfg.getExtStartThreshold() != null)
+            extStartThreshold = cfg.getExtStartThreshold();
+        if (cfg.getTempBaseLevel() != null)
+            tempBaseLevel = cfg.getTempBaseLevel();
+        if (cfg.getNightStartTime() != null)
+            nightStartTime = cfg.getNightStartTime();
+        if (cfg.getNightEndTime() != null)
+            nightEndTime = cfg.getNightEndTime();
+        if (cfg.getDayStartTime() != null)
+            dayStartTime = cfg.getDayStartTime();
+        if (cfg.getDayEndTime() != null)
+            dayEndTime = cfg.getDayEndTime();
+        if (cfg.getLogLevel() != null)
+            logLevel = cfg.getLogLevel();
+        if (cfg.getManagementServer() != null)
+            managementServer = cfg.getManagementServer();
+        if (cfg.getCircuits() != null) {
+            for (Circuit circuit: cfg.getCircuits()) {
+                for (Circuit dstCircuit: circuits) {
+                    if (dstCircuit.getIndex() == circuit.getIndex())
+                        dstCircuit.copy(circuit);
+                }
+            }
+        }
+    }
+
     @Getter
     @Setter
     @NoArgsConstructor
@@ -53,7 +84,7 @@ public class ControllerConfig {
                 dayAdjust = src.getDayAdjust();
             if (src.getHeatCharacteristics() != null) {
                 heatCharacteristics = new ArrayList<>();
-                for (HeatCharacteristics hc : heatCharacteristics) {
+                for (HeatCharacteristics hc : src.getHeatCharacteristics()) {
                     heatCharacteristics.add(hc);
                 }
             }

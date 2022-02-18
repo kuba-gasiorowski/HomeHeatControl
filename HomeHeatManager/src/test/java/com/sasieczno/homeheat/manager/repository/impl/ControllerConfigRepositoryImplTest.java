@@ -2,13 +2,12 @@ package com.sasieczno.homeheat.manager.repository.impl;
 
 import com.sasieczno.homeheat.manager.config.AppConfig;
 import com.sasieczno.homeheat.manager.model.ControllerConfig;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 
-@RunWith(MockitoJUnitRunner.StrictStubs.class)
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class ControllerConfigRepositoryImplTest {
 
     ControllerConfigRepositoryImpl testObj;
@@ -17,23 +16,22 @@ public class ControllerConfigRepositoryImplTest {
     JacksonConfiguration jacksonConfiguration;
 
 
-    @Before
+    @BeforeAll
     public void setup() {
         testObj = new ControllerConfigRepositoryImpl();
         cfg = new AppConfig();
         testObj.appConfig = cfg;
         jacksonConfiguration = new JacksonConfiguration();
-        testObj.jacksonConfiguration = jacksonConfiguration;
+        testObj.objectMapper = jacksonConfiguration.getHeatControllerObjectMapper();
     }
 
     @Test
     public void test_getConfig() throws Exception {
-        ClassLoader cl = this.getClass().getClassLoader();
-        cfg.controllerConfigFile = cl.getResource("HomeHeat.yml").getFile();
+        cfg.controllerConfigFile = "src/test/resources/HomeHeat.yml";
         ControllerConfig result = testObj.getConfig();
-        Assert.assertEquals(-18.0, result.getExtMinTemp(), 0.01);
-        Assert.assertEquals(12.0, result.getExtMaxTemp(), 0.01);
-        Assert.assertEquals(10, result.getCircuits().size());
+        Assertions.assertEquals(-18.0, result.getExtMinTemp(), 0.01);
+        Assertions.assertEquals(12.0, result.getExtMaxTemp(), 0.01);
+        Assertions.assertEquals(10, result.getCircuits().size());
         jacksonConfiguration.getHeatControllerObjectMapper().writeValue(System.out, result);
     }
 }

@@ -1,4 +1,3 @@
-
 extMinTemp: -18.0
 extMaxTemp: 12.0
 extStartThreshold: 0.15
@@ -141,9 +140,11 @@ circuits:
         heatFactor: 9.0074e-4
   - index: 8
     description: bathroom
-    active: true
-    maxTemp: 40.0
-    tempBaseLevel: 20.0
+    active: false
+    maxTemp: 29.0
+    tempBaseLevel: 11.0
+    nightAdjust: -0.1
+    dayAdjust: 0.15
     heatCharacteristics:
       - tempMax: 20.0
         heatFactor: 1.0102e-3

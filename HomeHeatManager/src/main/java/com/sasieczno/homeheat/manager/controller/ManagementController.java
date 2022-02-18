@@ -9,8 +9,7 @@ import com.sasieczno.homeheat.manager.model.HeatingData;
 import com.sasieczno.homeheat.manager.repository.ControllerConfigRepository;
 import com.sasieczno.homeheat.manager.repository.ControllerRepository;
 import com.sasieczno.homeheat.manager.service.ControllerStatusService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
@@ -20,15 +19,20 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Calendar;
 import java.util.LinkedList;
 
+/**
+ * The controller of the manager REST interface implementation.
+ */
+@Slf4j
 @RestController()
+@RequestMapping("api")
 public class ManagementController {
-    public static final Logger LOGGER = LoggerFactory.getLogger(ManagementController.class);
 
     @Autowired
     ControllerRepository controllerRepository;
@@ -42,7 +46,7 @@ public class ManagementController {
     @Autowired
     AppConfig appConfig;
 
-    @GetMapping(value = "api/status", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(value = "status", produces = MediaType.APPLICATION_JSON_VALUE)
     public HeatStatus getStatus() {
         HeatStatus heatStatus = new HeatStatus();
         ControllerConfig controllerConfig = controllerConfigRepository.getConfig();
@@ -53,12 +57,12 @@ public class ManagementController {
         return heatStatus;
     }
 
-    @GetMapping(value = "api/config", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(value = "config", produces = MediaType.APPLICATION_JSON_VALUE)
     public ControllerConfig getConfig() {
         return controllerConfigRepository.getConfig();
     }
 
-    @PostMapping(value = "api/config", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = "config", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ControllerConfig updateConfig(@RequestBody ControllerConfig config) {
         if (controllerConfigRepository.updateConfig(config)) {
             return controllerConfigRepository.getConfig();
@@ -67,7 +71,7 @@ public class ManagementController {
         }
     }
 
-    @GetMapping(value = "api/config/circuit/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(value = "config/circuit/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ControllerConfig.Circuit getCircuit(@PathVariable("id") Integer id) {
         for (ControllerConfig.Circuit circuit : controllerConfigRepository.getConfig().getCircuits()) {
             if (circuit.getIndex() == id)
@@ -76,8 +80,11 @@ public class ManagementController {
         throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Circuit does not exist in the config: " + id);
     }
 
-    @PostMapping(value = "api/config/circuit/{id}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = "config/circuit/{id}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ControllerConfig.Circuit updateCircuit(@PathVariable("id") Integer id, @RequestBody ControllerConfig.Circuit circuit) {
+        if (circuit.getIndex() != id) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Circuit id mismatch: " + id + " != " + circuit.getIndex());
+        }
         if (controllerConfigRepository.updateCircuitConfig(circuit)) {
             return getCircuit(id);
         } else {
@@ -85,10 +92,9 @@ public class ManagementController {
         }
     }
 
-
     @EventListener
     void onStartup(ApplicationReadyEvent event) {
-        LOGGER.info("HomeHeatManager version {} started", appConfig.applicationVersion);
+        log.info("HomeHeatManager version {} started", appConfig.applicationVersion);
     }
 
     void transportData(HeatingData heatingData, HeatStatus heatStatus) {
@@ -150,7 +156,7 @@ public class ManagementController {
     }
 
     void transportData(ControllerProcessData processData, HeatStatus status) {
-        LOGGER.info("ProcessData: status={}, lastActive={}, lastInactive={}",
+        log.debug("ProcessData: status={}, lastActive={}, lastInactive={}",
                 processData.getStatus(), processData.getActiveStateTimestamp(), processData.getInactiveStateTimestamp());
         status.setControllerStatus("active".equalsIgnoreCase(processData.getStatus()));
         Calendar statusChangeDate = Calendar.getInstance();

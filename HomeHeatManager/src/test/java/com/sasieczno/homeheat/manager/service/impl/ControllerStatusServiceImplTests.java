@@ -2,12 +2,9 @@ package com.sasieczno.homeheat.manager.service.impl;
 
 import com.sasieczno.homeheat.manager.model.HeatingData;
 import com.sasieczno.homeheat.manager.model.HeatingPeriod;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
-@RunWith(MockitoJUnitRunner.StrictStubs.class)
 public class ControllerStatusServiceImplTests {
 
     @Test
@@ -21,8 +18,8 @@ public class ControllerStatusServiceImplTests {
         // period = night
         obj.buf[8] = 0x01;
         HeatingData hs = obj.decodeManagementMessage(9);
-        Assert.assertEquals(1606295646886L, hs.getLastMessageTime().getTimeInMillis());
-        Assert.assertEquals(HeatingPeriod.NIGHT, hs.getHeatingPeriod());
+        Assertions.assertEquals(1606295646886L, hs.getLastMessageTime().getTimeInMillis());
+        Assertions.assertEquals(HeatingPeriod.NIGHT, hs.getHeatingPeriod());
     }
 
     public String bytesToHex(byte[] bytes) {

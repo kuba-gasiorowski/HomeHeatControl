@@ -1,0 +1,21 @@
+server:
+  port: 8080
+manager:
+  version: "0.0.1"
+  udp:
+    port: 20001
+    timeout: 61000
+  token:
+    expiry: 10000
+  refreshToken:
+    expiry: 100000
+  admin:
+    password: $2y$10$fTWtWIiJ44bY/ZoPi1lWm.9cgm//k6i/9ZjzFzAFUKhuA9BGd7S4u
+  user:
+    password: $2y$10$Yfife..KkelrQqz5UpdnIeG56bboCAg1fdoUqrPJQrOnC.1uv.spa
+controller:
+  configFile: "build/tmp/test/HomeHeat.yml"
+logging:
+  level:
+    com.sasieczno: DEBUG
+

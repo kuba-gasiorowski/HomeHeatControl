@@ -1,0 +1,43 @@
+plugins {
+    id 'org.springframework.boot' version '2.6.3'
+    id 'io.spring.dependency-management' version '1.0.11.RELEASE'
+    id "io.freefair.lombok" version "6.4.0"
+    id 'java'
+    id 'com.adarshr.test-logger' version '3.1.0'
+}
+
+def springbootVersion = '2.6.3'
+def springSecurityVersion = '5.6.1'
+def auth0Version = '3.18.3'
+def systemdVersion = '1.1.0'
+
+group = 'com.sasieczno.homeheat'
+version = '0.0.1-SNAPSHOT'
+description = 'manager'
+sourceCompatibility = 11
+targetCompatibility = 11
+
+repositories {
+    mavenCentral()
+}
+
+
+dependencies {
+    implementation "org.springframework.boot:spring-boot-starter-web:${springbootVersion}"
+    implementation "org.springframework.security:spring-security-web:${springSecurityVersion}"
+    implementation "org.springframework.security:spring-security-config:${springSecurityVersion}"
+    implementation "org.springframework.security:spring-security-core:${springSecurityVersion}"
+    implementation "com.auth0:java-jwt:${auth0Version}"
+    implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml"
+    implementation "com.fasterxml.jackson.datatype:jackson-datatype-jsr310"
+    implementation("com.github.thjomnx:java-systemd:${systemdVersion}") {
+        exclude group: 'org.slf4j', module: 'slf4j-simple'
+    }
+    implementation 'org.projectlombok:lombok'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+}
+
+test {
+    useJUnitPlatform()
+}

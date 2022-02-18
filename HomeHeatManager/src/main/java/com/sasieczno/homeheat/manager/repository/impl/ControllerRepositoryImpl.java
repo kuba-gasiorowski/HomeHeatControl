@@ -7,12 +7,19 @@ import de.thjom.java.systemd.Manager;
 import de.thjom.java.systemd.Service;
 import de.thjom.java.systemd.Systemd;
 import de.thjom.java.systemd.Unit;
+import lombok.extern.slf4j.Slf4j;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.springframework.stereotype.Repository;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
+/**
+ * The heating controller process repository implementation
+ * with Systemd DBus access.
+ */
+
+@Slf4j
 @Repository("ControllerRepository")
 public class ControllerRepositoryImpl implements ControllerRepository {
     HeatStatus heatStatus;
@@ -51,6 +58,7 @@ public class ControllerRepositoryImpl implements ControllerRepository {
     void destroy() {
         Systemd.disconnect();
         try {
+            running = false;
             monitoringThread.interrupt();
             monitoringThread.join();
         } catch (InterruptedException e) {}
@@ -75,7 +83,7 @@ public class ControllerRepositoryImpl implements ControllerRepository {
         data.setActiveStateTimestamp(activeSince);
         data.setInactiveStateTimestamp(inactiveSince);
         data.setPid(pid);
-        data.setnRestarts(restarts);
+        data.setNRestarts(restarts);
         return data;
     }
 
