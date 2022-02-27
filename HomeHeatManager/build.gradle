@@ -38,6 +38,35 @@ dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter'
 }
 
+project.gradle.taskGraph.whenReady {
+    println(project.gradle.taskGraph.allTasks)
+}
+
+task angularNpmInstall(type: Exec) {
+    workingDir "$projectDir/frontend"
+    commandLine 'npm', 'install'
+}
+
+task angularBuild(type: Exec) {
+    workingDir "$projectDir/frontend"
+    commandLine 'node_modules/@angular/cli/bin/ng.js', 'build', '--configuration', 'production'
+}
+
+task angularClean(type: Exec) {
+    workingDir "$projectDir/frontend"
+    commandLine 'rm', '-rf', 'dist'
+}
+
+bootJar {
+    dependsOn(tasks.angularBuild)
+    into('static') {
+        from ('frontend/dist/home-heat-client')
+    }
+}
+
 test {
     useJUnitPlatform()
 }
+
+
+tasks.clean.dependsOn(tasks.angularClean)

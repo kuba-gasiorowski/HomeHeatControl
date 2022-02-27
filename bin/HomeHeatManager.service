@@ -1,0 +1,16 @@
+[Unit]
+Description=Home Heating service
+After=network.target
+
+[Service]
+ExecStart=java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5555 -jar manager.jar
+WorkingDirectory=/home/pi/HomeHeatManager
+SuccessExitStatus=143
+StandardOutput=inherit
+StandardError=inherit
+Restart=always
+RestartSec=50
+User=pi
+
+[Install]
+WantedBy=multi-user.target
