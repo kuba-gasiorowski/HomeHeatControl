@@ -1,0 +1,52 @@
+<div class="container">
+  <div class="row align-items-center">
+    <form [formGroup]="loginForm" class="col-md-2 offset-md-5 col-8 offset-1">
+      <fieldset>
+        <legend>Login</legend>
+        <div class="form-field">
+          <label class="form-label" for="username">User: </label>
+          <input
+            name="username"
+            id="username"
+            formControlName="username"
+            class="form-control"
+            autofocus
+          />
+        </div>
+        <div
+          class="alert alert-danger"
+          role="alert"
+          *ngIf="loginForm.get('username')?.errors && loginForm.touched"
+        >
+          Username is mandatory
+        </div>
+        <div class="form-field">
+          <label class="form-label" for="password">Password: </label>
+          <input
+            name="password"
+            id="password"
+            formControlName="password"
+            class="form-control"
+            type="password"
+          />
+        </div>
+      </fieldset>
+      <p></p>
+
+      <div class="form-button">
+        <button
+          class="btn btn-primary btn-block"
+          (click)="loginForm.valid && login()"
+          [disabled]="loginButtonDisabled"
+        >
+          Login
+        </button>
+      </div>
+      <p></p>
+
+      <div class="alert alert-danger" role="alert" *ngIf="errorMessage !== ''">
+        Login failed: {{ errorMessage }}
+      </div>
+    </form>
+  </div>
+</div>

@@ -1,0 +1,68 @@
+<dl class="row">
+  <dt class="col-md-2 col-6">Last updated:</dt>
+  <dd class="col-md-9 col-6">
+    <span class="badge" [ngClass]="displayClass()">{{
+      heatData.ready
+        ? (heatData.lastMessageTime | date: "yyyy-MM-dd HH:mm:ss")
+        : "Not available"
+    }}</span>
+  </dd>
+
+  <dt class="col-md-2 col-6">Heating period:</dt>
+  <dd class="col-md-9 col-6">
+    <span class="badge" [ngClass]="displayClass()">{{
+      heatData.ready ? heatData.heatingPeriod : "Not available"
+    }}</span>
+  </dd>
+
+  <dt class="col-md-2 col-6">External temp:</dt>
+  <dd class="col-md-9 col-6">
+    <span class="badge" [ngClass]="displayClass()">{{
+      heatData.ready ? getExternalTemperature() : "Not available"
+    }}</span>
+  </dd>
+
+  <dt class="col-md-2 col-6">Average External temp:</dt>
+  <dd class="col-md-9 col-6">
+    <span class="badge" [ngClass]="displayClass()">{{
+      heatData.ready ? getAverageExternalTemperature() : "Not available"
+    }}</span>
+  </dd>
+
+  <dt class="col-md-2 col-6">Controller status:</dt>
+  <dd class="col-md-9 col-6">
+    <span class="form-check form-switch"
+      ><input
+        class="form-check-input"
+        type="checkbox"
+        id="checkboxControllerStatus"
+        disabled
+        [checked]="heatData.controllerStatus ? 'checked' : null"
+    /></span>
+  </dd>
+
+  <dt class="col-md-2 col-6">Last controller status change:</dt>
+  <dd class="col-md-9 col-6">
+    <span class="badge" [ngClass]="displayClass()">{{
+      heatData.ready
+        ? (heatData.lastStatusChangeTime | date: "yyyy-MM-dd HH:mm:ss")
+        : "Not available"
+    }}</span>
+  </dd>
+</dl>
+
+<p
+  class="alert alert-warning"
+  *ngIf="
+    getManagementInterfaceStatus() == ManagementInterfaceStatusEnum.OUTDATED
+  "
+>
+  No management data received for more than 5 minutes. Please check management
+  processes
+</p>
+<p
+  class="alert alert-secondary"
+  *ngIf="getManagementInterfaceStatus() == ManagementInterfaceStatusEnum.OFF"
+>
+  No management data received. Please check management processes.
+</p>

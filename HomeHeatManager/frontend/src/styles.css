@@ -1,0 +1,12 @@
+/* You can add global styles to this file, and also import other style files */
+
+
+body {
+  margin: 0.5em;
+}
+@media (min-width: 768px) {
+  body {
+    margin: 2em;
+  }
+}
+

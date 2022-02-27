@@ -1,0 +1,727 @@
+<div class="alert alert-secondary" role="alert">
+  For detailed description of how the heating works, visit:
+  <a
+    href="https://github.com/kuba-gasiorowski/HomeHeatControl/blob/main/README.md#software-part"
+    target="_blank"
+    rel="noopener noreferrer"
+    >Project description on Github.</a
+  >
+</div>
+<form [formGroup]="configFormGroup">
+  <div class="row align-items-left">
+    <div class="col-6 col-md-3">
+      <ng-template #popExtMinTemp id="extMinTempHelp"
+        >The external temperature (in &deg;C) in which the heating level is
+        100%</ng-template
+      >
+      <label
+        for="extMinTemp"
+        class="col-form-label"
+        [ngbPopover]="popExtMinTemp"
+        placement="right"
+        triggers="mouseenter:mouseleave"
+      >
+        <b>Minimal external temperature</b>
+      </label>
+    </div>
+    <div class="col-6 col-md-2 pb-3">
+      <div class="input-group">
+        <input
+          id="extMinTemp"
+          type="text"
+          appInputTemperature
+          formControlName="extMinTemp"
+          class="form-control"
+          style="max-width: 6rem"
+          aria-describedby="extMinTempHelp"
+          [ngClass]="{
+            'is-valid':
+              configFormGroup.controls['extMinTemp'].touched &&
+              configFormGroup.controls['extMinTemp'].valid,
+            'is-invalid':
+              configFormGroup.controls['extMinTemp'].touched &&
+              configFormGroup.controls['extMinTemp'].invalid
+          }"
+        />
+        <span class="input-group-text">&deg;C</span>
+      </div>
+    </div>
+    <div
+      class="col auto form-text alert alert-danger"
+      role="alert"
+      *ngIf="isInvalid(configFormGroup.controls['extMinTemp']) && configFormGroup.controls['extMinTemp'].errors?.['invalidTemperature']"
+    >
+      Invalid value, must be proper real number.
+    </div>
+    <div
+      class="col auto form-text alert alert-danger"
+      role="alert"
+      *ngIf="isInvalid(configFormGroup.controls['extMinTemp']) && configFormGroup.controls['extMinTemp'].errors?.['tempMismatch']"
+    >
+      Invalid value, must be less than max temperature (below).
+    </div>
+  </div>
+
+  <div class="row align-items-left">
+    <div class="col-6 col-md-3">
+      <ng-template #popExtMaxTemp id="extMaxTempHelp"
+        >The external temperature (in &deg;C) in which the heating starts with
+        level = <i>extStartThreshold</i> %</ng-template
+      >
+      <label
+        for="extMaxTemp"
+        class="form-label"
+        [ngbPopover]="popExtMaxTemp"
+        placement="right"
+        triggers="mouseenter:mouseleave"
+      >
+        <b>Maximal external temperature</b>
+      </label>
+    </div>
+    <div class="col-6 col-md-2 pb-3">
+      <div class="input-group">
+        <input
+          id="extMaxTemp"
+          type="text"
+          appInputTemperature
+          formControlName="extMaxTemp"
+          class="form-control"
+          style="max-width: 6rem"
+          aria-describedby="extMaxTempHelp"
+          [ngClass]="{
+            'is-valid':
+              configFormGroup.controls['extMaxTemp'].touched &&
+              configFormGroup.controls['extMaxTemp'].valid,
+            'is-invalid':
+              configFormGroup.controls['extMaxTemp'].touched &&
+              configFormGroup.controls['extMaxTemp'].invalid
+          }"
+        /><span class="input-group-text">&deg;C</span>
+      </div>
+    </div>
+    <div
+      class="col auto form-text alert alert-danger"
+      role="alert"
+      *ngIf="isInvalid(configFormGroup.controls['extMaxTemp']) && configFormGroup.controls['extMaxTemp'].errors?.['invalidTemperature']"
+    >
+      Invalid value, must be proper real number.
+    </div>
+    <div
+      class="col auto form-text alert alert-danger"
+      role="alert"
+      *ngIf="isInvalid(configFormGroup.controls['extMaxTemp']) && configFormGroup.controls['extMaxTemp'].errors?.['tempMismatch']"
+    >
+      Invalid value, must be grater than min temperature (above).
+    </div>
+  </div>
+
+  <div class="row align-items-left">
+    <div class="col-6 col-md-3">
+      <ng-template #popExtStartThreshold id="extMaxThresholdHelp"
+        >The heating level start threshold (in %)</ng-template
+      >
+      <label
+        for="extStartThreshold"
+        class="form-label"
+        [ngbPopover]="popExtStartThreshold"
+        placement="right"
+        triggers="mouseenter:mouseleave"
+      >
+        <b>Heating start threshold</b>
+      </label>
+    </div>
+    <div class="col-6 col-md-2 pb-3">
+      <div class="input-group">
+        <input
+          id="extStartThreshold"
+          type="text"
+          appInputPercent
+          formControlName="extStartThreshold"
+          class="form-control"
+          style="max-width: 6rem"
+          aria-describedby="extStartThresholdHelp"
+          [ngClass]="{
+            'is-valid':
+              configFormGroup.controls['extStartThreshold'].touched &&
+              configFormGroup.controls['extStartThreshold'].valid,
+            'is-invalid':
+              configFormGroup.controls['extStartThreshold'].touched &&
+              configFormGroup.controls['extStartThreshold'].invalid
+          }"
+        />
+        <span class="input-group-text">%&nbsp;</span>
+      </div>
+    </div>
+    <div
+      class="col auto form-text alert alert-danger"
+      role="alert"
+      id="extMinTempError"
+      *ngIf="isInvalid(configFormGroup.controls['extStartThreshold'])"
+    >
+      Invalid value, must be proper percent value.
+    </div>
+  </div>
+
+  <div class="row align-items-left">
+    <div class="col-6 col-md-3">
+      <ng-template #popTempBaseLevel id="tempBaseLevelHelp"
+        >The general base level for heating circuits (in &deg;C) - may be
+        redefined in the specific circuit configuration</ng-template
+      >
+      <label
+        for="tempBaseLevel"
+        class="form-label"
+        [ngbPopover]="popTempBaseLevel"
+        placement="right"
+        triggers="mouseenter:mouseleave"
+      >
+        <b>Floor temperature base level</b>
+      </label>
+    </div>
+    <div class="col-6 col-md-2">
+      <div class="input-group pb-3">
+        <input
+          id="tempBaseLevel"
+          type="text"
+          appInputTemperature
+          formControlName="tempBaseLevel"
+          class="form-control"
+          style="max-width: 6rem"
+          aria-describedby="tempBaseLevelHelp"
+          [ngClass]="{
+            'is-valid':
+              configFormGroup.controls['tempBaseLevel'].touched &&
+              configFormGroup.controls['tempBaseLevel'].valid,
+            'is-invalid':
+              configFormGroup.controls['tempBaseLevel'].touched &&
+              configFormGroup.controls['tempBaseLevel'].invalid
+          }"
+        />
+        <span class="input-group-text">&deg;C</span>
+      </div>
+    </div>
+    <div
+      class="col auto form-text alert alert-danger"
+      role="alert"
+      id="extMinTempError"
+      *ngIf="isInvalid(configFormGroup.controls['tempBaseLevel'])"
+    >
+      Invalid value, must be proper real number.
+    </div>
+  </div>
+
+  <div class="row align-items-left">
+    <div class="col-6 col-md-3">
+      <ng-template #popNightStartTime
+        ><div id="nigthStartTimeHelp">
+          The night period (from time - to time, time in
+          <i>hh:mm[:ss]</i> format, hh - hour 0-23, mm - minute 0-59, ss -
+          optional second 0-59)
+        </div></ng-template
+      >
+      <label
+        for="nightStartTime"
+        class="form-label"
+        [ngbPopover]="popNightStartTime"
+        placement="right"
+        triggers="mouseenter:mouseleave"
+        ><b>The night period</b></label
+      >
+    </div>
+    <div class="col-3 col-md-1 pb-3">
+      <input
+        id="nightStartTime"
+        type="text"
+        appInputTime
+        formControlName="nightStartTime"
+        class="form-control"
+        aria-describedby="nightTimeHelp"
+        [ngClass]="{
+          'is-valid':
+            configFormGroup.controls['nightStartTime'].touched &&
+            configFormGroup.controls['nightStartTime'].valid,
+          'is-invalid':
+            configFormGroup.controls['nightStartTime'].touched &&
+            configFormGroup.controls['nightStartTime'].invalid
+        }"
+      />
+    </div>
+    <div class="col-3 col-md-1 pb-3">
+      <input
+        id="nightEndTime"
+        type="text"
+        appInputTime
+        formControlName="nightEndTime"
+        class="form-control"
+        aria-describedby="nightTimeHelp"
+        [ngClass]="{
+          'is-valid':
+            configFormGroup.controls['nightEndTime'].touched &&
+            configFormGroup.controls['nightEndTime'].valid,
+          'is-invalid':
+            configFormGroup.controls['nightEndTime'].touched &&
+            configFormGroup.controls['nightEndTime'].invalid
+        }"
+      />
+    </div>
+    <div
+      class="col auto form-text alert alert-danger"
+      role="alert"
+      *ngIf="isInvalid(configFormGroup.controls['nightStartTime']) && configFormGroup.controls['nightStartTime'].errors?.['invalidTime']"
+    >
+      Invalid night start time:
+      <b
+        >wrong
+        {{(configFormGroup.controls['nightStartTime'].errors?.['invalidHour'] ? 'hour, ' : '') +
+        (configFormGroup.controls['nightStartTime'].errors?.['invalidMinute'] ? 'minute, ' : '') +
+        (configFormGroup.controls['nightStartTime'].errors?.['invalidSecond'] ? 'second, ' : '')}}</b
+      ><br />
+      time must be in <i>hh:mm[:ss]</i> format, where: <i>hh</i> - hour (0-23),
+      <i>mm</i> - minute (0-59), <i>ss</i> - second (optional, 0-59)
+    </div>
+    <div
+      class="col auto form-text alert alert-danger"
+      role="alert"
+      *ngIf="isInvalid(configFormGroup.controls['nightEndTime']) && configFormGroup.controls['nightEndTime'].errors?.['invalidTime']"
+    >
+      Invalid night end time:
+      <b
+        >wrong
+        {{(configFormGroup.controls['nightEndTime'].errors?.['invalidHour'] ? 'hour, ' : '') +
+            (configFormGroup.controls['nightEndTime'].errors?.['invalidMinute'] ? 'minute, ' : '') +
+            (configFormGroup.controls['nightEndTime'].errors?.['invalidSecond'] ? 'second, ' : '')}}</b
+      ><br />
+      time must be in <i>hh:mm[:ss]</i> format, where: <i>hh</i> - hour (0-23),
+      <i>mm</i> - minute (0-59), <i>ss</i> - second (optional, 0-59)
+    </div>
+  </div>
+
+  <div class="row align-items-left">
+    <div class="col-6 col-md-3">
+      <ng-template #popDayStartTime
+        ><div id="dayStartTimeHelp">
+          The day period (from time - to time, time in <i>hh:mm[:ss]</i> format,
+          hh - hour 0-23, mm - minute 0-59, ss - optional second 0-59)
+        </div></ng-template
+      >
+      <label
+        for="dayStartTime"
+        class="form-label"
+        [ngbPopover]="popDayStartTime"
+        placement="right"
+        triggers="mouseenter:mouseleave"
+        ><b>The day period</b></label
+      >
+    </div>
+    <div class="col-3 col-md-1 pb-3">
+      <input
+        id="dayStartTime"
+        type="text"
+        appInputTime
+        formControlName="dayStartTime"
+        class="form-control"
+        aria-describedby="dayTimeHelp"
+        [ngClass]="{
+          'is-valid':
+            configFormGroup.controls['dayStartTime'].touched &&
+            configFormGroup.controls['dayStartTime'].valid,
+          'is-invalid':
+            configFormGroup.controls['dayStartTime'].touched &&
+            configFormGroup.controls['dayStartTime'].invalid
+        }"
+      />
+    </div>
+    <div class="col-3 col-md-1 pb-3">
+      <input
+        id="dayEndTime"
+        type="text"
+        appInputTime
+        formControlName="dayEndTime"
+        class="form-control"
+        aria-describedby="dayTimeHelp"
+        [ngClass]="{
+          'is-valid':
+            configFormGroup.controls['dayEndTime'].touched &&
+            configFormGroup.controls['dayEndTime'].valid,
+          'is-invalid':
+            configFormGroup.controls['dayEndTime'].touched &&
+            configFormGroup.controls['dayEndTime'].invalid
+        }"
+      />
+    </div>
+    <div
+      class="col auto form-text alert alert-danger"
+      role="alert"
+      *ngIf="isInvalid(configFormGroup.controls['dayStartTime']) && configFormGroup.controls['dayStartTime'].errors?.['invalidTime']"
+    >
+      Invalid day start time:
+      <b
+        >wrong
+        {{(configFormGroup.controls['dayStartTime'].errors?.['invalidHour'] ? 'hour, ' : '') +
+            (configFormGroup.controls['dayStartTime'].errors?.['invalidMinute'] ? 'minute, ' : '') +
+            (configFormGroup.controls['dayStartTime'].errors?.['invalidSecond'] ? 'second, ' : '')}}</b
+      ><br />
+      time must be in <i>hh:mm[:ss]</i> format, where: <i>hh</i> - hour (0-23),
+      <i>mm</i> - minute (0-59), <i>ss</i> - second (optional, 0-59)
+    </div>
+    <div
+      class="col auto form-text alert alert-danger"
+      role="alert"
+      *ngIf="isInvalid(configFormGroup.controls['dayEndTime']) && configFormGroup.controls['dayEndTime'].errors?.['invalidTime']"
+    >
+      Invalid day end time:
+      <b
+        >wrong
+        {{(configFormGroup.controls['dayEndTime'].errors?.['invalidHour'] ? 'hour, ' : '') +
+            (configFormGroup.controls['dayEndTime'].errors?.['invalidMinute'] ? 'minute, ' : '') +
+            (configFormGroup.controls['dayEndTime'].errors?.['invalidSecond'] ? 'second, ' : '')}}</b
+      ><br />
+      time must be in <i>hh:mm[:ss]</i> format, where: <i>hh</i> - hour (0-23),
+      <i>mm</i> - minute (0-59), <i>ss</i> - second (optional, 0-59)
+    </div>
+  </div>
+
+  <div
+    class="row align-items-left"
+    *ngIf="isInvalid(configFormGroup.controls['dayStartTime']) && configFormGroup.controls['dayStartTime'].errors?.['invalidPeriod']"
+  >
+    <div
+      class="col-6 offset-6 col-md-9 offset-md-3 form-text alert alert-danger"
+      role="alert"
+      *ngIf="configFormGroup.controls['dayStartTime'].errors?.['invalidDayPeriod']"
+    >
+      Invalid day period definition: start time must be before end time
+    </div>
+    <div
+      class="col-6 offset-6 col-md-9 offset-md-3 form-text alert alert-danger"
+      role="alert"
+      *ngIf="configFormGroup.controls['dayStartTime'].errors?.['periodOverlap']"
+    >
+      Invalid periods definition: night and day may not overlap
+    </div>
+  </div>
+
+  <div class="accordion" id="circuitItems" formArrayName="circuits">
+    <div
+      class="accordion-item"
+      *ngFor="
+        let circuitElem of getCircuitsFormArray().controls;
+        let indexOfElement = index
+      "
+      [formGroupName]="indexOfElement"
+      id="circuitData{{ indexOfElement }}"
+    >
+      <h2 class="accordion-header" id="circuitHeading{{ indexOfElement }}">
+        <button
+          class="accordion-button collapsed"
+          type="button"
+          data-bs-toggle="collapse"
+          attr.data-bs-target="#collapse{{ indexOfElement }}"
+          aria-expanded="false"
+          attr.aria-controls="collapse{{ indexOfElement }}"
+        >
+          Circuit {{ indexOfElement }}:
+          {{ circuitElem.get("description")?.value }}
+        </button>
+      </h2>
+      <div
+        id="collapse{{ indexOfElement }}"
+        class="accordion-collapse collapse"
+        attr.aria-labelledby="circuitHeading{{ indexOfElement }}"
+        attr.data-bs-parent="#circuitData{{ indexOfElement }}"
+      >
+        <div class="accordion body">
+          <div class="row align-items-left pt-3">
+            <div class="col-6 col-md-3">
+              <label
+                for="circuitDescription{{ indexOfElement }}"
+                class="form-label"
+                ><b>The circuit description</b></label
+              >
+            </div>
+            <div class="col-6 col-md-2 pb-3">
+              <input
+                id="circuitDescription{{ indexOfElement }}"
+                type="text"
+                formControlName="description"
+                class="form-control"
+                attr.aria-describedby="circuitDescriptionHelp{{
+                  indexOfElement
+                }}"
+              />
+            </div>
+            <div
+              class="col auto form-text alert alert-danger"
+              id="circuitDescriptionError{{ indexOfElement }}"
+              *ngIf="isInvalid(circuitElem.get('description'))"
+            >
+              Invalid description
+            </div>
+          </div>
+
+          <div class="row align-items-left">
+            <div class="col-6 col-md-3">
+              <ng-template #popCircuitActive
+                ><div id="circuitActiveHelp{{ indexOfElement }}">
+                  Toggle to enable/disable the heating circuit
+                </div></ng-template
+              >
+              <label
+                for="circuitActive{{ indexOfElement }}"
+                class="col-form-label"
+                [ngbPopover]="popCircuitActive"
+                placement="right"
+                triggers="mouseenter:mouseleave"
+                ><b>The circuit status</b></label
+              >
+            </div>
+            <div class="col-6 col-md-2 pb-3">
+              <span class="form-check form-switch">
+                <input
+                  class="form-check-input"
+                  type="checkbox"
+                  id="circuitActive{{ indexOfElement }}"
+                  formControlName="active"
+                  attr.aria-described-by="circuitActiveHelp{{ indexOfElement }}"
+                />
+              </span>
+            </div>
+          </div>
+
+          <div class="row align-items-left">
+            <div class="col-6 col-md-3">
+              <ng-template #popCircuitMaxTemp
+                ><div id="circuitMaxTempHelp{{ indexOfElement }}">
+                  The circuit temperature (in &deg;C) to be reached at heating
+                  level 100%
+                </div></ng-template
+              >
+              <label
+                for="circuitMaxTemp{{ indexOfElement }}"
+                class="col-form-label"
+                [ngbPopover]="popCircuitMaxTemp"
+                placement="right"
+                triggers="mouseenter:mouseleave"
+                ><b>The circuit max temperature</b></label
+              >
+            </div>
+            <div class="col-6 col-md-2 pb-3">
+              <div class="input-group">
+                <input
+                  id="circuitMaxTemp{{ indexOfElement }}"
+                  type="text"
+                  appInputTemperature
+                  formControlName="maxTemp"
+                  class="form-control"
+                  style="max-width: 6rem"
+                  attr.aria-describedby="circuitMaxTempHelp{{ indexOfElement }}"
+                  [ngClass]="{
+                    'is-valid':
+                      circuitElem.get('maxTemp')?.touched &&
+                      circuitElem.get('maxTemp')?.valid,
+                    'is-invalid':
+                      circuitElem.get('maxTemp')?.touched &&
+                      circuitElem.get('maxTemp')?.invalid
+                  }"
+                />
+                <span class="input-group-text">&deg;C</span>
+              </div>
+            </div>
+            <div
+              class="col auto form-text alert alert-danger"
+              id="circuitMaxTempError{{ indexOfElement }}"
+              *ngIf="isInvalid(circuitElem.get('maxTemp'))"
+            >
+              Invalid value, must be proper real number.
+            </div>
+          </div>
+
+          <div class="row align-items-left">
+            <div class="col-6 col-md-3">
+              <ng-template #popCircuitTempBaseLevel
+                ><div id="circuitTempBaseLevelHelp{{ indexOfElement }}">
+                  The reference circuit temperature (in &deg;C) at level 0%
+                  (overrides value from general settings)
+                </div></ng-template
+              >
+              <label
+                for="circuiTempBaseLevel{{ indexOfElement }}"
+                class="col-form-label"
+                [ngbPopover]="popCircuitTempBaseLevel"
+                placement="right"
+                triggers="mouseenter:mouseleave"
+                ><b>The circuit base level temperature</b></label
+              >
+            </div>
+            <div class="col-6 col-md-2 pb-3">
+              <div class="input-group">
+                <input
+                  id="circuitTempBaseLevel{{ indexOfElement }}"
+                  type="text"
+                  appInputTemperature
+                  formControlName="tempBaseLevel"
+                  class="form-control"
+                  style="max-width: 6rem"
+                  attr.aria-describedby="circuitTempBaseLevelHelp{{
+                    indexOfElement
+                  }}"
+                  [ngClass]="{
+                    'is-valid':
+                      circuitElem.get('tempBaseLevel')?.touched &&
+                      circuitElem.get('tempBaseLevel')?.valid,
+                    'is-invalid':
+                      circuitElem.get('tempBaseLevel')?.touched &&
+                      circuitElem.get('tempBaseLevel')?.invalid
+                  }"
+                />
+                <span class="input-group-text">&deg;C</span>
+              </div>
+            </div>
+            <div
+              class="col auto form-text alert alert-danger"
+              id="circuitTempBaseLevelError{{ indexOfElement }}"
+              *ngIf="isInvalid(circuitElem.get('tempBaseLevel'))"
+            >
+              Invalid value, must be proper real number.
+            </div>
+          </div>
+
+          <div class="row align-items-left">
+            <div class="col-6 col-md-3">
+              <ng-template #popCircuitNightAdjust
+                ><div id="circuitNightAdjustHelp{{ indexOfElement }}">
+                  The computed heating level night adjustement for the circuit,
+                  for example:<br />
+                  computed heating level = 20%, nightAdjust = 10%, heating level
+                  for circuit in the night = 20% incremented by 10% = 22%
+                </div></ng-template
+              >
+              <label
+                for="circuiNightAdjust{{ indexOfElement }}"
+                class="col-form-label"
+                [ngbPopover]="popCircuitNightAdjust"
+                placement="right"
+                triggers="mouseenter:mouseleave"
+                ><b>The circuit night adjustment</b></label
+              >
+            </div>
+            <div class="col-6 col-md-3 pb-3">
+              <div class="input-group">
+                <input
+                  id="circuitNightAdjust{{ indexOfElement }}"
+                  type="text"
+                  appInputPercent
+                  formControlName="nightAdjust"
+                  class="form-control"
+                  style="max-width: 6rem"
+                  attr.aria-describedby="circuitNightAdjustHelp{{
+                    indexOfElement
+                  }}"
+                  [ngClass]="{
+                    'is-valid':
+                      circuitElem.get('nightAdjust')?.touched &&
+                      circuitElem.get('nightAdjust')?.valid,
+                    'is-invalid':
+                      circuitElem.get('nightAdjust')?.touched &&
+                      circuitElem.get('nightAdjust')?.invalid
+                  }"
+                />
+                <span class="input-group-text">%&nbsp;</span>
+              </div>
+            </div>
+            <div
+              class="col auto form-text alert alert-danger"
+              id="circuitNightAdjustError{{ indexOfElement }}"
+              *ngIf="isInvalid(circuitElem.get('nightAdjust'))"
+            >
+              Invalid value, must be proper percent value (-30 - 30)
+            </div>
+          </div>
+
+          <div class="row align-items-left">
+            <div class="col-6 col-md-3">
+              <ng-template #popCircuitDayAdjust
+                ><div id="circuitDayAdjustHelp{{ indexOfElement }}">
+                  The computed heating level day adjustement for the circuit,
+                  for example:<br />
+                  computed heating level = 20%, dayAdjust = -10%, heating level
+                  for circuit in the night = 20% decremented by 10% = 18%
+                </div></ng-template
+              >
+              <label
+                for="circuiDayAdjust{{ indexOfElement }}"
+                class="col-form-label"
+                [ngbPopover]="popCircuitDayAdjust"
+                placement="right"
+                triggers="mouseenter:mouseleave"
+                ><b>The circuit day adjustment</b></label
+              >
+            </div>
+            <div class="col-6 col-md-2 pb-3">
+              <div class="input-group">
+                <input
+                  id="circuitDayAdjust{{ indexOfElement }}"
+                  type="text"
+                  appInputPercent
+                  formControlName="dayAdjust"
+                  class="form-control"
+                  style="max-width: 6rem"
+                  attr.aria-describedby="circuitDayAdjustHelp{{
+                    indexOfElement
+                  }}"
+                  [ngClass]="{
+                    'is-valid':
+                      circuitElem.get('dayAdjust')?.touched &&
+                      circuitElem.get('dayAdjust')?.valid,
+                    'is-invalid':
+                      circuitElem.get('dayAdjust')?.touched &&
+                      circuitElem.get('dayAdjust')?.invalid
+                  }"
+                />
+                <span class="input-group-text">%&nbsp;</span>
+              </div>
+            </div>
+            <div
+              class="col auto form-text alert alert-danger"
+              id="circuitDayAdjustError{{ indexOfElement }}"
+              *ngIf="isInvalid(circuitElem.get('dayAdjust'))"
+            >
+              Invalid value, must be proper percent value (-30 - 30)
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p></p>
+
+  <div class="row align-items-left">
+    <div class="col-md-1 col-6">
+      <button
+        type="submit"
+        class="btn btn-primary"
+        (click)="confirmSave()"
+        [disabled]="
+          isActionExecuted ||
+          configFormGroup.pristine ||
+          (configFormGroup.touched && configFormGroup.invalid)
+        "
+        data-bs-toggle="modal"
+        data-bs-target="#confirmModal"
+      >
+        Save changes
+      </button>
+    </div>
+    <div class="col-md-1 col-6">
+      <button
+        class="btn btn-primary"
+        (click)="refreshData()"
+        [disabled]="isActionExecuted"
+        data-bs-toggle="modal"
+        data-bs-target="#confirmModal"
+      >
+        Refresh data
+      </button>
+    </div>
+  </div>
+</form>

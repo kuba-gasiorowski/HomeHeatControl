@@ -1,0 +1,19 @@
+<app-general-heating-info></app-general-heating-info>
+<h2>Circuits state</h2>
+<table class="table w-auto table-responsive">
+  <thead>
+    <th scope="col"><span>#</span></th>
+    <th scope="col"><span>Name</span></th>
+    <th scope="col"><span>Temperature</span></th>
+    <th scope="col"><span>Heating now</span></th>
+    <th scope="col"><span>Active</span></th>
+  </thead>
+  <tbody>
+    <tr
+      app-circuit-data
+      *ngFor="let circuitDataElem of circuitData; let indexOfElement = index"
+      [index]="indexOfElement"
+      [circuitData]="circuitDataElem"
+    ></tr>
+  </tbody>
+</table>
