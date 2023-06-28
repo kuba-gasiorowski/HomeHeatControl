@@ -70,9 +70,7 @@ public class ControllerStatusServiceImpl implements ControllerStatusService {
         managementUdpServer = new DatagramSocket(appConfig.udpManagerPort);
         managementUdpServer.setSoTimeout(appConfig.udpManagerTimeout);
         running = true;
-        managementServerThread = new Thread(() -> {
-            processManagementMessage();
-        }, "ManagementUdpServer");
+        managementServerThread = new Thread(this::processManagementMessage, "ManagementUdpServer");
         managementServerThread.start();
 
     }
@@ -99,7 +97,7 @@ public class ControllerStatusServiceImpl implements ControllerStatusService {
             DatagramPacket packet = new DatagramPacket(buf, buf.length);
             try {
                 managementUdpServer.receive(packet);
-                log.debug("Received packet from: " + packet.getAddress().getCanonicalHostName());
+                log.debug("Received packet from: {}", packet.getAddress().getCanonicalHostName());
                 heatingData = decodeManagementMessage(packet.getLength());
             } catch (SocketTimeoutException e) {
                 log.info("Timeout on Management UDP Socket");

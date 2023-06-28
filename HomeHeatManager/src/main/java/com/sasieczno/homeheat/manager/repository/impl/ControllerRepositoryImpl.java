@@ -1,7 +1,6 @@
 package com.sasieczno.homeheat.manager.repository.impl;
 
 import com.sasieczno.homeheat.manager.model.ControllerProcessData;
-import com.sasieczno.homeheat.manager.model.HeatStatus;
 import com.sasieczno.homeheat.manager.repository.ControllerRepository;
 import de.thjom.java.systemd.Manager;
 import de.thjom.java.systemd.Service;
@@ -9,6 +8,7 @@ import de.thjom.java.systemd.Systemd;
 import de.thjom.java.systemd.Unit;
 import lombok.extern.slf4j.Slf4j;
 import org.freedesktop.dbus.exceptions.DBusException;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Repository;
 
 import javax.annotation.PostConstruct;
@@ -22,53 +22,30 @@ import javax.annotation.PreDestroy;
 @Slf4j
 @Repository("ControllerRepository")
 public class ControllerRepositoryImpl implements ControllerRepository {
-    HeatStatus heatStatus;
-    Systemd systemd;
-    Manager manager;
-    Service controllerService;
-    Thread monitoringThread;
-    boolean running = false;
-
-    String state;
-    long activeSince;
-    long inactiveSince;
-    int pid;
-    long restarts;
+    private Systemd systemd;
+    private Manager manager;
+    private Service controllerService;
+    private String state;
+    private long activeSince;
+    private long inactiveSince;
+    private int pid;
+    private long restarts;
 
 
     @PostConstruct
-    void init() throws DBusException {
-        heatStatus = new HeatStatus();
+    public void init() throws DBusException {
         systemd = Systemd.get();
         manager = systemd.getManager();
         controllerService = manager.getService("HomeHeat.service");
-        running = true;
-        monitoringThread = new Thread(() -> {
-            while (running) {
-                monitorControllerProcess();
-                try {
-                    Thread.sleep(60000);
-                } catch (InterruptedException e) {}
-            }
-        }, "ControllerCheck");
-        monitoringThread.start();
     }
 
     @PreDestroy
-    void destroy() {
+    public void destroy() {
         Systemd.disconnect();
-        try {
-            running = false;
-            monitoringThread.interrupt();
-            monitoringThread.join();
-        } catch (InterruptedException e) {}
     }
 
-    public HeatStatus getHeatStatus() {
-        return heatStatus;
-    }
-
-    void monitorControllerProcess() {
+    @Scheduled(fixedRate = 60000)
+    public void monitorControllerProcess() {
         state = controllerService.getActiveState();
         activeSince = controllerService.getActiveEnterTimestamp();
         inactiveSince = controllerService.getInactiveEnterTimestamp();

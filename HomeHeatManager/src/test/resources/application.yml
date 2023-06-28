@@ -1,14 +1,17 @@
 server:
   port: 8080
 manager:
-  version: "0.0.1"
+  version: "1.0"
   udp:
     port: 20001
     timeout: 61000
   token:
     expiry: 10000
+    expiredRemovalPeriod: 60000
+    secret: 00000000000000000000000000000000
   refreshToken:
-    expiry: 100000
+    #expiry: 100000
+    expiry: 10000000
   admin:
     password: $2y$10$fTWtWIiJ44bY/ZoPi1lWm.9cgm//k6i/9ZjzFzAFUKhuA9BGd7S4u
   user:

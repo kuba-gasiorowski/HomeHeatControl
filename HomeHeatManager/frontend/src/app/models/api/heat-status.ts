@@ -17,9 +17,16 @@ export enum HeatingPeriod {
   NO_HEATING,
 }
 
+export enum CircuitMode {
+  OFF = "OFF",
+  NIGHT = "NIGHT",
+  DAY = "DAY",
+  ALL = "ALL",
+}
+
 export class CircuitStatus {
   circuitIndex: number = -1;
-  circuitStatus: boolean = false;
+  circuitStatus: CircuitMode = CircuitMode.OFF;
   heatingOn: boolean = false;
   circuitName: string = '';
   circuitTemperature: number = 0;
@@ -100,7 +107,7 @@ export class Time {
 export class CircuitConfig {
   index?: number;
   description?: string;
-  active?: boolean;
+  active?: CircuitMode;
   maxTemp?: number;
   tempBaseLevel?: number;
   nightAdjust?: number;

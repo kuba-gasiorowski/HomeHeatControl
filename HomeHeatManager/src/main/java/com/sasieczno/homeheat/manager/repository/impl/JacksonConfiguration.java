@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
+import com.sasieczno.homeheat.manager.model.CircuitMode;
+import com.sasieczno.homeheat.manager.model.CircuitStatus;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -21,6 +23,7 @@ public class JacksonConfiguration {
         SimpleModule simpleModule = new SimpleModule();
         simpleModule.addDeserializer(LocalTime.class, new LocalTimeDeserializer());
         simpleModule.addSerializer(LocalTime.class, new LocalTimeSerializer());
+        simpleModule.addDeserializer(CircuitMode.class, new CircuitStatus.CircuitStatusDeserializer());
         mapper.registerModule(simpleModule);
         return mapper;
     }

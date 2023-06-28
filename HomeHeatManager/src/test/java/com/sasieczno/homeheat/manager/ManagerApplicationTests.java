@@ -2,6 +2,7 @@ package com.sasieczno.homeheat.manager;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sasieczno.homeheat.manager.model.CircuitMode;
 import com.sasieczno.homeheat.manager.model.ControllerProcessData;
 import com.sasieczno.homeheat.manager.model.HeatStatus;
 import com.sasieczno.homeheat.manager.model.HeatingPeriod;
@@ -69,6 +70,8 @@ class ManagerApplicationTests {
 
 	static String accessToken = "";
 	static String refreshToken = "";
+
+	static String oldRefreshToken = "";
 
 	@BeforeEach
 	public void copyProperties() throws Exception {
@@ -153,7 +156,7 @@ class ManagerApplicationTests {
 					result.set(convertJsonToObject(json, HeatStatus.class));
 				});
 		Assertions.assertEquals(hourAgo, result.get().getLastStatusChangeTime().getTimeInMillis());
-		Assertions.assertEquals(true, result.get().isControllerStatus());
+		Assertions.assertTrue(result.get().isControllerStatus());
 	}
 
 	@Test
@@ -205,6 +208,7 @@ class ManagerApplicationTests {
 		Assertions.assertEquals(-18.0, result.get().get("extMinTemp"));
 		Assertions.assertEquals(12.0, result.get().get("extMaxTemp"));
 		Assertions.assertEquals(0.15, result.get().get("extStartThreshold"));
+		Assertions.assertEquals("config/HomeHeat_logging.yml", result.get().get("logConfig"));
 		convertAndCheckLocaltime(LocalTime.of(22, 0, 0), result.get().get("nightStartTime"));
 		convertAndCheckLocaltime(LocalTime.of(6, 58, 0), result.get().get("nightEndTime"));
 		convertAndCheckLocaltime(LocalTime.of(13, 0, 0), result.get().get("dayStartTime"));
@@ -212,10 +216,10 @@ class ManagerApplicationTests {
 		Assertions.assertTrue(result.get().get("circuits") instanceof List);
 		List<Object> circuits = (List<Object>) result.get().get("circuits");
 		Assertions.assertEquals(10, circuits.size());
-		checkCircuit(0, "kitchen", true, 35.0, 20.0, null, null, circuits.get(0));
-		checkCircuit(1, "living room", true, 30.0, 20.0, null, null, circuits.get(1));
-		checkCircuit(8, "bathroom", false, 29.0, 11.0, -0.1, 0.15, circuits.get(8));
-		checkCircuit(9, "technical room", true, 35.0, 20.0, null, null, circuits.get(9));
+		checkCircuit(0, "kitchen", CircuitMode.DAY, 35.0, 20.0, null, null, circuits.get(0));
+		checkCircuit(1, "living room", CircuitMode.NIGHT, 30.0, 20.0, null, null, circuits.get(1));
+		checkCircuit(8, "bathroom", CircuitMode.OFF, 29.0, 11.0, -0.1, 0.15, circuits.get(8));
+		checkCircuit(9, "technical room", CircuitMode.ALL, 35.0, 20.0, null, null, circuits.get(9));
 	}
 
 	@Test
@@ -236,6 +240,7 @@ class ManagerApplicationTests {
 		Assertions.assertEquals(-18.0, result.get().get("extMinTemp"));
 		Assertions.assertEquals(15.0, result.get().get("extMaxTemp"));
 		Assertions.assertEquals(0.15, result.get().get("extStartThreshold"));
+		Assertions.assertEquals("config/HomeHeat_logging.yml", result.get().get("logConfig"));
 		convertAndCheckLocaltime(LocalTime.of(22, 0, 0), result.get().get("nightStartTime"));
 		convertAndCheckLocaltime(LocalTime.of(6, 58, 0), result.get().get("nightEndTime"));
 		convertAndCheckLocaltime(LocalTime.of(13, 0, 0), result.get().get("dayStartTime"));
@@ -243,10 +248,10 @@ class ManagerApplicationTests {
 		Assertions.assertTrue(result.get().get("circuits") instanceof List);
 		List<Object> circuits = (List<Object>) result.get().get("circuits");
 		Assertions.assertEquals(10, circuits.size());
-		checkCircuit(0, "kitchen", true, 35.0, 20.0, null, null, circuits.get(0));
-		checkCircuit(1, "living room", true, 30.0, 20.0, null, null, circuits.get(1));
-		checkCircuit(8, "bathroom", false, 29.0, 11.0, -0.1, 0.15, circuits.get(8));
-		checkCircuit(9, "technical room", true, 35.0, 20.0, null, null, circuits.get(9));
+		checkCircuit(0, "kitchen", CircuitMode.DAY, 35.0, 20.0, null, null, circuits.get(0));
+		checkCircuit(1, "living room", CircuitMode.NIGHT, 30.0, 20.0, null, null, circuits.get(1));
+		checkCircuit(8, "bathroom", CircuitMode.OFF, 29.0, 11.0, -0.1, 0.15, circuits.get(8));
+		checkCircuit(9, "technical room", CircuitMode.ALL, 35.0, 20.0, null, null, circuits.get(9));
 	}
 
 	@Test
@@ -267,6 +272,7 @@ class ManagerApplicationTests {
 		Assertions.assertEquals(-18.0, result.get().get("extMinTemp"));
 		Assertions.assertEquals(12.0, result.get().get("extMaxTemp"));
 		Assertions.assertEquals(0.15, result.get().get("extStartThreshold"));
+		Assertions.assertEquals("config/HomeHeat_logging.yml", result.get().get("logConfig"));
 		convertAndCheckLocaltime(LocalTime.of(22, 0, 0), result.get().get("nightStartTime"));
 		convertAndCheckLocaltime(LocalTime.of(6, 58, 0), result.get().get("nightEndTime"));
 		convertAndCheckLocaltime(LocalTime.of(14, 30, 0), result.get().get("dayStartTime"));
@@ -274,10 +280,10 @@ class ManagerApplicationTests {
 		Assertions.assertTrue(result.get().get("circuits") instanceof List);
 		List<Object> circuits = (List<Object>) result.get().get("circuits");
 		Assertions.assertEquals(10, circuits.size());
-		checkCircuit(0, "kitchen", true, 35.0, 20.0, null, null, circuits.get(0));
-		checkCircuit(1, "newroom", true, 29.0, 20.0, null, null, circuits.get(1));
-		checkCircuit(8, "bathroom", false, 29.0, 11.0, -0.1, 0.15, circuits.get(8));
-		checkCircuit(9, "technical room", true, 35.0, 20.0, null, null, circuits.get(9));
+		checkCircuit(0, "kitchen", CircuitMode.DAY, 35.0, 20.0, null, null, circuits.get(0));
+		checkCircuit(1, "newroom", CircuitMode.NIGHT, 29.0, 20.0, null, null, circuits.get(1));
+		checkCircuit(8, "bathroom", CircuitMode.OFF, 29.0, 11.0, -0.1, 0.15, circuits.get(8));
+		checkCircuit(9, "technical room", CircuitMode.ALL, 35.0, 20.0, null, null, circuits.get(9));
 	}
 
 	@Test
@@ -295,13 +301,13 @@ class ManagerApplicationTests {
 				});
 		Assertions.assertEquals(2, result.get().get("index"));
 		Assertions.assertEquals("boys' room 1", result.get().get("description"));
-		Assertions.assertEquals(true, result.get().get("active"));
+		Assertions.assertEquals(CircuitMode.ALL, CircuitMode.valueOf((String)result.get().get("active")));
 		Assertions.assertEquals(30.0, result.get().get("maxTemp"));
 		Assertions.assertEquals(20.0, result.get().get("tempBaseLevel"));
 		Assertions.assertTrue(result.get().containsKey("nightAdjust"));
-		Assertions.assertEquals(null, result.get().get("nightAdjust"));
+		Assertions.assertNull(result.get().get("nightAdjust"));
 		Assertions.assertTrue(result.get().containsKey("dayAdjust"));
-		Assertions.assertEquals(null, result.get().get("dayAdjust"));
+		Assertions.assertNull(result.get().get("dayAdjust"));
 	}
 
 	@Test
@@ -319,7 +325,7 @@ class ManagerApplicationTests {
 				});
 		Assertions.assertEquals(8, result.get().get("index"));
 		Assertions.assertEquals("bathroom", result.get().get("description"));
-		Assertions.assertEquals(false, result.get().get("active"));
+		Assertions.assertEquals(CircuitMode.OFF, CircuitMode.valueOf((String)result.get().get("active")));
 		Assertions.assertEquals(29.0, result.get().get("maxTemp"));
 		Assertions.assertEquals(11.0, result.get().get("tempBaseLevel"));
 		Assertions.assertEquals(-0.1, result.get().get("nightAdjust"));
@@ -335,7 +341,7 @@ class ManagerApplicationTests {
 
 		mockMvc.perform(post("/api/config/circuit/8").header("Authorization", "Bearer " + accessToken)
 						.contentType(MediaType.APPLICATION_JSON_VALUE)
-						.content("{\"index\":8,\"active\": true}")).andDo(print())
+						.content("{\"index\":8,\"active\": \"DAY\"}")).andDo(print())
 				.andExpect(status().is2xxSuccessful())
 				.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
 				.andDo(mvcResult -> {
@@ -344,7 +350,7 @@ class ManagerApplicationTests {
 				});
 		Assertions.assertEquals(8, result.get().get("index"));
 		Assertions.assertEquals("bathroom", result.get().get("description"));
-		Assertions.assertEquals(true, result.get().get("active"));
+		Assertions.assertEquals(CircuitMode.DAY, CircuitMode.valueOf((String)result.get().get("active")));
 		Assertions.assertEquals(29.0, result.get().get("maxTemp"));
 		Assertions.assertEquals(11.0, result.get().get("tempBaseLevel"));
 		Assertions.assertEquals(-0.1, result.get().get("nightAdjust"));
@@ -360,7 +366,7 @@ class ManagerApplicationTests {
 
 		mockMvc.perform(post("/api/config/circuit/8").header("Authorization", "Bearer " + accessToken)
 						.contentType(MediaType.APPLICATION_JSON_VALUE)
-						.content("{\"index\":8,\"active\":true,\"maxTemp\":28.5,\"nightAdjust\":0.3,\"dayAdjust\":0}")).andDo(print())
+						.content("{\"index\":8,\"active\":\"NIGHT\",\"maxTemp\":28.5,\"nightAdjust\":0.3,\"dayAdjust\":0}")).andDo(print())
 				.andExpect(status().is2xxSuccessful())
 				.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
 				.andDo(mvcResult -> {
@@ -369,7 +375,7 @@ class ManagerApplicationTests {
 				});
 		Assertions.assertEquals(8, result.get().get("index"));
 		Assertions.assertEquals("bathroom", result.get().get("description"));
-		Assertions.assertEquals(true, result.get().get("active"));
+		Assertions.assertEquals(CircuitMode.NIGHT, CircuitMode.valueOf((String)result.get().get("active")));
 		Assertions.assertEquals(28.5, result.get().get("maxTemp"));
 		Assertions.assertEquals(11.0, result.get().get("tempBaseLevel"));
 		Assertions.assertEquals(0.3, result.get().get("nightAdjust"));
@@ -386,7 +392,7 @@ class ManagerApplicationTests {
 
 		mockMvc.perform(post("/api/config/circuit/8").header("Authorization", "Bearer " + accessToken)
 						.contentType(MediaType.APPLICATION_JSON_VALUE)
-						.content("{\"index\":1,\"active\":true}")).andDo(print())
+						.content("{\"index\":1,\"active\":\"ALL\"}")).andDo(print())
 				.andExpect(status().is4xxClientError());
 	}
 
@@ -394,18 +400,45 @@ class ManagerApplicationTests {
 	@Test
 	@Order(80)
 	public void refreshToken() throws Exception {
+		oldRefreshToken = refreshToken;
 		mockMvc.perform(post("/api/auth/refresh")
 				.contentType(MediaType.TEXT_PLAIN_VALUE)
 				.content(refreshToken))
 				.andExpect(status().is2xxSuccessful())
-				.andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_PLAIN))
+				.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
 				.andDo(mvcResult -> {
-					accessToken = mvcResult.getResponse().getContentAsString();
+					AuthData authData = convertJsonToObject(mvcResult.getResponse().getContentAsString(), AuthData.class);
+					accessToken = authData.getToken();
+					refreshToken = authData.getRefreshToken();
 				});
 	}
 
 	@Test
 	@Order(81)
+	public void refreshTokenOldFails() throws Exception {
+		mockMvc.perform(post("/api/auth/refresh")
+						.contentType(MediaType.TEXT_PLAIN_VALUE)
+						.content(oldRefreshToken))
+				.andExpect(status().isUnauthorized());
+	}
+
+	@Test
+	@Order(82)
+	public void refreshTokenAgain() throws Exception {
+		mockMvc.perform(post("/api/auth/refresh")
+						.contentType(MediaType.TEXT_PLAIN_VALUE)
+						.content(refreshToken))
+				.andExpect(status().is2xxSuccessful())
+				.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+				.andDo(mvcResult -> {
+					AuthData authData = convertJsonToObject(mvcResult.getResponse().getContentAsString(), AuthData.class);
+					accessToken = authData.getToken();
+					refreshToken = authData.getRefreshToken();
+				});
+	}
+
+	@Test
+	@Order(83)
 	public void getStatusWithNewToken() throws Exception {
 		AtomicReference<HeatStatus> result = new AtomicReference<>();
 		ControllerProcessData cpd = new ControllerProcessData();
@@ -461,14 +494,14 @@ class ManagerApplicationTests {
 		Assertions.assertEquals(expected, lt);
 	}
 
-	void checkCircuit(Integer index, String description, Boolean active, Double maxTemp, Double tempBaseLevel,
+	void checkCircuit(Integer index, String description, CircuitMode active, Double maxTemp, Double tempBaseLevel,
 					  Double nightAdjust, Double dayAdjust, Object src) {
 		HashMap<String, Object> circuit = new HashMap<>();
 		Assertions.assertTrue(circuit.getClass().isAssignableFrom(src.getClass()));
 		circuit = (HashMap<String, Object>) src;
 		Assertions.assertEquals(index, circuit.get("index"));
 		Assertions.assertEquals(description, circuit.get("description"));
-		Assertions.assertEquals(active, circuit.get("active"));
+		Assertions.assertEquals(active, CircuitMode.valueOf((String)circuit.get("active")));
 		Assertions.assertEquals(maxTemp, circuit.get("maxTemp"));
 		Assertions.assertEquals(tempBaseLevel, circuit.get("tempBaseLevel"));
 		Assertions.assertEquals(nightAdjust, circuit.get("nightAdjust"));
@@ -479,7 +512,7 @@ class ManagerApplicationTests {
 		DatagramSocket client = new DatagramSocket();
 		InetAddress address = InetAddress.getByName("127.0.0.1");
 		ByteBuffer bb = ByteBuffer.allocate(4096);
-		bb.order(ByteOrder.nativeOrder());
+		bb.order(ByteOrder.BIG_ENDIAN);
 		bb.putDouble(timestamp);
 		bb.put(heatingPeriod);
 		bb.putDouble(extTemp);

@@ -4,6 +4,7 @@ plugins {
     id "io.freefair.lombok" version "6.4.0"
     id 'java'
     id 'com.adarshr.test-logger' version '3.1.0'
+    id 'de.undercouch.download' version '5.2.0'
 }
 
 def springbootVersion = '2.6.3'
@@ -12,7 +13,7 @@ def auth0Version = '3.18.3'
 def systemdVersion = '1.1.0'
 
 group = 'com.sasieczno.homeheat'
-version = '0.0.1-SNAPSHOT'
+version = "${rootProject.version}"
 description = 'manager'
 sourceCompatibility = 11
 targetCompatibility = 11
@@ -48,6 +49,7 @@ task angularNpmInstall(type: Exec) {
 }
 
 task angularBuild(type: Exec) {
+    dependsOn "angularNpmInstall"
     workingDir "$projectDir/frontend"
     commandLine 'node_modules/@angular/cli/bin/ng.js', 'build', '--configuration', 'production'
 }
@@ -57,8 +59,19 @@ task angularClean(type: Exec) {
     commandLine 'rm', '-rf', 'dist'
 }
 
+task downloadBootstrap(type: Download) {
+    src 'https://github.com/twbs/bootstrap/releases/download/v5.1.3/bootstrap-5.1.3-dist.zip'
+    dest new File(buildDir, 'bootstrap-5.1.3-dist.zip')
+    overwrite false
+}
+
+task unzipBootstrap(dependsOn: [downloadBootstrap, angularBuild], type: Copy) {
+    from zipTree(downloadBootstrap.dest)
+    into "$projectDir/frontend/dist/home-heat-client"
+}
+
 bootJar {
-    dependsOn(tasks.angularBuild)
+    dependsOn(tasks.unzipBootstrap)
     into('static') {
         from ('frontend/dist/home-heat-client')
     }

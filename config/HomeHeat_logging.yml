@@ -7,7 +7,7 @@ handlers:
   file:
     class: logging.handlers.TimedRotatingFileHandler
     level: DEBUG
-    filename: log/HomeHeat.log
+    filename: /var/log/homeheat/HomeHeat.log
     when: W0
     backupCount: 5
     atTime: 1970-01-01 20:00:00

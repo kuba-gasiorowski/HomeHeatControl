@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { HeatStatus } from '../../models/api/heat-status';
 import { CircuitData } from '../../models/circuit-heating-data';
 import { BackendApiService } from '../../shared/backend-api.service';
+import { ModalLoadingService } from '../modal-loading/modal-loading.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -10,7 +11,9 @@ import { BackendApiService } from '../../shared/backend-api.service';
 })
 export class DashboardComponent implements OnInit {
   circuitData: CircuitData[] = [];
-  constructor(public backendApiService: BackendApiService) {}
+  private loading = true;
+  constructor(public backendApiService: BackendApiService,
+    private loadingService: ModalLoadingService) {}
 
   copyData(value: HeatStatus): void {
     if (value.ready) {
@@ -29,9 +32,16 @@ export class DashboardComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    if (!this.backendApiService.lastStatus.ready) {
+      this.loadingService.invokeLoading(true);
+    }
     this.copyData(this.backendApiService.lastStatus);
     this.backendApiService.heatStatus.subscribe((result) => {
       this.copyData(result);
+      if (this.loading) {
+        this.loadingService.invokeLoading(false);
+        this.loading = false;
+      }
     });
   }
 }

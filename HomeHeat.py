@@ -2,6 +2,7 @@
 
 import RPi.GPIO as GPIO
 import adafruit_ads1x15.ads1115 as ADS
+import argparse
 import atexit
 import board
 import busio
@@ -15,6 +16,9 @@ import sys
 import time
 import yaml
 from adafruit_ads1x15.analog_in import AnalogIn
+from enum import Enum
+
+VERSION = '1.0.0'
 
 # Reference voltage for thermistor resistance measurements
 REF_VOLTAGE = 3.3
@@ -30,6 +34,20 @@ TEMP_MIN_EXT = -50.0
 
 TEMP_MAX = 100.0
 TEMP_MAX_EXT = 60.0
+
+
+class CircuitMode(Enum):
+    OFF = 0
+    NIGHT = 1
+    DAY = 2
+    ALL = 3
+
+    @classmethod
+    def from_name(cls, name):
+        try:
+            return cls[name.upper()]
+        except:
+            return cls.OFF
 
 
 class MeasurementException(Exception):
@@ -115,9 +133,9 @@ def get_heating_period(heat_level, day_period, current_temp, base_level, circuit
     adjust_value = 1
     try:
         if day_period == 1:
-            adjust_value += circuit_data['nightAdjust']
+            adjust_value += float(circuit_data['nightAdjust'] or 0)
         elif day_period == 2:
-            adjust_value += circuit_data['dayAdjust']
+            adjust_value += float(circuit_data['dayAdjust'] or 0)
     except KeyError:
         pass
     heat_level *= adjust_value
@@ -144,9 +162,10 @@ def get_heating_period(heat_level, day_period, current_temp, base_level, circuit
             heat_period += (tb - ta) / heat_factor
         n -= 1
     temp_max_b = heat_characteristics[0]['tempMax']
+    tb = min(desired_temp, temp_max_b)
     heat_factor = heat_characteristics[0]['heatFactor']
     if current_temp < heat_characteristics[0]['tempMax']:
-        heat_period += (temp_max_b - current_temp) / heat_factor
+        heat_period += (tb - current_temp) / heat_factor
     return heat_period, desired_temp
 
 
@@ -243,7 +262,15 @@ def cleanup():
     GPIO.cleanup()
 
 
-with open('config/HomeHeat_logging.yml', 'r') as f:
+parser = argparse.ArgumentParser(description='Home Heat Controller process', prog='HomeHeatController')
+parser.add_argument('-c', '--config', default='config/HomeHeat.yml', help='Config file path')
+parser.add_argument('--version', action='version', version='%(prog)s ' + VERSION)
+cmd_args = parser.parse_args()
+
+with open(cmd_args.config, 'r') as cfg_file:
+    cfg = yaml.load(cfg_file, Loader=yaml.FullLoader)
+
+with open(cfg.get('logConfig', 'config/HomeHeat_logging.yml'), 'r') as f:
     logging_config = yaml.load(f, Loader=yaml.FullLoader)
     logging.config.dictConfig(logging_config)
 logger = logging.getLogger()
@@ -315,10 +342,11 @@ cfg = []
 curr_day_period = 0
 while True:
     curr_timestamp = datetime.datetime.now()
-    management_data = struct.pack('d', curr_timestamp.timestamp())
-    with open('config/HomeHeat.yml', 'r') as cfg_file:
+    management_data = struct.pack('!d', curr_timestamp.timestamp())
+    with open(cmd_args.config, 'r') as cfg_file:
         cfg = yaml.load(cfg_file, Loader=yaml.FullLoader)
-    logger.setLevel(cfg['logLevel'])
+    if 'logLevel' in cfg:
+        logger.setLevel(cfg.get('logLevel'))
     day_period, time_to_end, period_length = get_day_period(curr_timestamp, cfg)
     if day_period == 0:
         if curr_day_period > 0:
@@ -346,19 +374,19 @@ while True:
             continue
         ext_temp_array = []
         try:
-            with open('config/ExtTemperatures.txt', 'r') as ext_temp_file:
+            with open('ExtTemperatures.txt', 'r') as ext_temp_file:
                 for line in ext_temp_file:
                     ext_temp_array.append(float(line))
         except IOError:
-            pass
+            logger.warning("Could not read external temperature history from file", exc_info=True)
         ext_temp_avg = calculate_avg_ext_temperature(ext_temp, ext_temp_array)
-        management_data += struct.pack('2d', ext_temp, ext_temp_avg)
+        management_data += struct.pack('!2d', ext_temp, ext_temp_avg)
         try:
-            with open('config/ExtTemperatures.txt', 'w') as ext_temp_file:
+            with open('ExtTemperatures.txt', 'w') as ext_temp_file:
                 for i in ext_temp_array:
                     ext_temp_file.write('%f\n' % i)
         except IOError:
-            pass
+            logger.warning("Could not re-write external temperature history to file", exc_info=True)
         heating_level = get_ext_temperature_level(ext_temp_avg, cfg['extMaxTemp'], cfg['extMinTemp'],
                                                   cfg['extStartThreshold'])
         logger.debug("Avg external temperature: %f, level: %f", ext_temp_avg, heating_level)
@@ -388,17 +416,18 @@ while True:
             logger.debug("Temperature in room '%s'(%d): %f%s",
                          cfg['circuits'][index]['description'], index, temp, heat_status_string)
             if temp <= TEMP_MIN or temp >= TEMP_MAX:
-                logger.warning("Temperature in room '%s'(%d): %f outside of reasonable level, check sensor connection!!!",
+                logger.warning("Temperature in room '%s'(%d): %f outside of reasonable level, check sensor connection!",
                                cfg['circuits'][index]['description'], index, temp)
                 circuits[index][1] = GPIO.LOW
                 GPIO.output(circuits[index][0], GPIO.LOW)
                 continue
             management_data += struct.pack('c', index.to_bytes(1, byteorder='little'))
-            management_data += struct.pack('d', temp)
+            management_data += struct.pack('!d', temp)
             management_data += struct.pack('?', (circuits[index][1] == GPIO.HIGH))
             if day_period == 0:
                 continue
-            if not cfg['circuits'][index]['active']:
+            circuit_mode = CircuitMode.from_name(cfg['circuits'][index]['active'])
+            if circuit_mode.value & day_period == 0:
                 log_str = "Circuit %d isn't active"
                 if circuits[index][1] != GPIO.LOW:
                     circuits[index][1] = GPIO.LOW
@@ -418,14 +447,14 @@ while True:
                 GPIO.output(circuits[index][0], GPIO.HIGH)
                 logger.info(
                     "Starting heating circuit %s [%d] = %f, %d to reach %f" % (
-                    cfg['circuits'][index]['description'], index, temp, heating_period, desired_temp))
+                        cfg['circuits'][index]['description'], index, temp, heating_period, desired_temp))
     except MeasurementException:
         pass
+    if cfg['managementServer'] is not None:
+        management_server_address = cfg['managementServer'].split(':')
+        management_interface.sendto(management_data, (management_server_address[0], int(management_server_address[1])))
     time_to_sleep = 60.0 - datetime.datetime.now().timestamp() + curr_timestamp.timestamp()
     if time_to_sleep < 0:
         logger.warning("No time left after cycle: %f" % time_to_sleep)
         time_to_sleep = 0.0
-    if cfg['managementServer'] is not None:
-        management_server_address = cfg['managementServer'].split(':')
-        management_interface.sendto(management_data, (management_server_address[0], int(management_server_address[1])))
     time.sleep(time_to_sleep)

@@ -79,11 +79,18 @@ The diagram below describes the levels.
 Having the heating level, the application tries to switch the heating in the way, that the desired temperature is reached at
 the end of the 2nd tariff zone period (night or day). The desired temperature in the reference to the base temperature,
 defined as general parameter `tempBaseLevel`. For each heating circuit there's specific maximum temperature defined by
-the parameter `maxTemp`. Having those parameters, the desired temperature is computed as:
-`desired temperature = tempBaseLevel + heating level * (maxTemp - tempBaseLevel)`
+the parameter `maxTemp`.
+
+Additionally, there're two optional parameters:
+* `nightAdjust` - the value to modify heating level during the night period in 2nd tariff zone
+* `dayAdjust` - the value to modify heating level during the day period in 2nd tariff zone
+
+ Having those parameters, the desired temperature is computed as:
+```desired temperature = tempBaseLevel + heating level * (maxTemp - tempBaseLevel) * (1 + nightAdjust)```
+
 The heating characteristics defined by complex parameter `heatCharacteristics` define how fast the temperature of the
 specific circuit grows when the heating is on. Those characteristics are linear within a defined segments. For example:
-
+```
     heatCharacteristics:
       - tempMax: 20.0
         heatFactor: 8.3333e-4
@@ -95,6 +102,7 @@ specific circuit grows when the heating is on. Those characteristics are linear 
         heatFactor: 1.1e-3
       - tempMax: 100.0
         heatFactor: 1.2e-3
+```
 This means:
 1. Below 20 Celsius grades the temperature grows 8.3333e-4 grades per second
 1. Between 20 and 23 grades the temperature grows 9.4242-4 grades per second
@@ -102,6 +110,10 @@ This means:
 1. Between 26 and 30 grades the temperature grows 1.1e-3 grades per second
 1. Over 30 (actually between 30 and 100 grades) the temperature grows 1.2e-3 grades per second
 
-Each circuit has parameter `active` - when set to false, the circuit won't be switched on.
+Each circuit has parameter `active` - it might have following values:
+* `OFF` - the circuit is switched off
+* `NIGHT` - the circuit heats during night only
+* `DAY` - the circuit heats during day only
+* `ALL` - the circuit heats during both periods in the cheap zone
 
 Additional parameter `descritpion` - defines the name (informational only) of the heating circuit.

@@ -1,0 +1,101 @@
+plugins {
+    id 'nebula.ospackage' version '9.1.1'
+}
+
+project.version = '1.1'
+
+task buildPackage(type: Deb) {
+    dependsOn(':HomeHeatManager:build')
+    packageName = 'kga-home-heat'
+    version = "${project.version}"
+    release = '1'
+
+    packageDescription = 'Accumulative floor heating controlling system'
+    license = 'Apache'
+    os = 'Linux'
+
+    preInstall file('bin/preInstall.sh')
+    postInstall file('bin/postInstall.sh')
+    preUninstall file('bin/preUninstall.sh')
+    postUninstall file('bin/postUninstall.sh')
+
+    requires('python3-pip')
+
+    into ('/opt/homeheat')
+
+    from('./HomeHeat.py') {
+        createDirectoryEntry = true
+        user = 'root'
+        permissionGroup = 'root'
+        fileMode = 0755
+        into 'bin'
+    }
+
+    from ('./bin') {
+        createDirectoryEntry = false
+        include 'HomeHeatPreStart.sh'
+        user = 'root'
+        permissionGroup = 'root'
+        fileMode = 0755
+        into 'bin'
+    }
+
+    from ('./bin') {
+        createDirectoryEntry = false
+        include 'motd-homeheat.sh'
+        user = 'root'
+        permissionGroup = 'root'
+        fileMode = 0075
+        into '/etc/profile.d'
+    }
+
+    from ('./config') {
+        createDirectoryEntry = true
+        user = 'root'
+        permissionGroup = 'root'
+        fileMode = 0644
+        fileType = CONFIG | NOREPLACE
+        into 'conf'
+    }
+
+    from ("./HomeHeatManager/build/libs/HomeHeatManager-${project.version}.jar") {
+        createDirectoryEntry = false
+        user = 'root'
+        permissionGroup = 'root'
+        fileMode = 0644
+        into 'bin'
+    }
+
+    link ('/opt/homeheat/bin/HomeHeatManager.jar', "/opt/homeheat/bin/HomeHeatManager-${project.version}.jar")
+
+    from ('./HomeHeatManager/src/main/resources/application.yml') {
+        createDirectoryEntry = false
+        user = 'root'
+        permissionGroup = 'root'
+        fileMode = 0644
+        fileType = CONFIG | NOREPLACE
+        into 'conf'
+    }
+
+    from ('./bin') {
+        createDirectoryEntry = false
+        user = 'root'
+        permissionGroup = 'root'
+        fileMode = 00644
+        include '*.service'
+        into '/etc/systemd/system'
+    }
+
+    from ('./bin') {
+        createDirectoryEntry = false
+        user = 'root'
+        permissionGroup = 'root'
+        fileMode = 00644
+        include '*.preset'
+        into '/etc/systemd/system-preset'
+    }
+}
+
+build {
+    dependsOn(buildPackage)
+}

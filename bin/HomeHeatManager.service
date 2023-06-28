@@ -3,14 +3,13 @@ Description=Home Heating service
 After=network.target
 
 [Service]
-ExecStart=java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5555 -jar manager.jar
-WorkingDirectory=/home/pi/HomeHeatManager
+ExecStart=java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5555 -jar /opt/homeheat/bin/HomeHeatManager.jar --spring.config.location=file:///opt/homeheat/conf/application.yml
+WorkingDirectory=/var/log/homeheat
 SuccessExitStatus=143
 StandardOutput=inherit
 StandardError=inherit
 Restart=always
 RestartSec=50
-User=pi
 
 [Install]
 WantedBy=multi-user.target

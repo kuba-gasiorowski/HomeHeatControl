@@ -1,4 +1,4 @@
-
+---
 extMinTemp: -18.0
 extMaxTemp: 12.0
 extStartThreshold: 0.15
@@ -8,14 +8,17 @@ nightEndTime: 6:58:00
 dayStartTime: 13:00:00
 dayEndTime: 15:58:00
 logLevel: DEBUG
+logConfig: /opt/homeheat/conf/HomeHeat_logging.yml
 managementServer: 127.0.0.1:20001
 
 circuits:
   - index: 0
     description: kitchen
-    active: true
+    active: ALL
     maxTemp: 35.0
     tempBaseLevel: 20.0
+    nightAdjust: 0
+    dayAdjust: 0
     heatCharacteristics:
       - tempMax: 20.0
         heatFactor: 1.0384e-3
@@ -29,9 +32,11 @@ circuits:
         heatFactor: 1.0384e-3
   - index: 1
     description: living room
-    active: true
+    active: ALL
     maxTemp: 30.0
     tempBaseLevel: 20.0
+    nightAdjust: 0
+    dayAdjust: 0
     heatCharacteristics:
       - tempMax: 20.0
         heatFactor: 7.1031e-4
@@ -45,9 +50,11 @@ circuits:
         heatFactor: 7.1031e-4
   - index: 2
     description: boys' room 1
-    active: true
+    active: ALL
     maxTemp: 30.0
     tempBaseLevel: 20.0
+    nightAdjust: 0
+    dayAdjust: 0
     heatCharacteristics:
       - tempMax: 20.0
         heatFactor: 8.3333e-4
@@ -61,9 +68,11 @@ circuits:
         heatFactor: 8.3333e-4
   - index: 3
     description: boys' room 2
-    active: true
+    active: ALL
     maxTemp: 30.0
     tempBaseLevel: 20.0
+    nightAdjust: 0
+    dayAdjust: 0
     heatCharacteristics:
       - tempMax: 20.0
         heatFactor: 8.3333e-4
@@ -77,9 +86,11 @@ circuits:
         heatFactor: 8.3333e-4
   - index: 4
     description: hall
-    active: true
+    active: ALL
     maxTemp: 30.0
     tempBaseLevel: 20.0
+    nightAdjust: 0
+    dayAdjust: 0
     heatCharacteristics:
       - tempMax: 20.0
         heatFactor: 6.8e-4
@@ -93,9 +104,11 @@ circuits:
         heatFactor: 6.8e-4
   - index: 5
     description: office room
-    active: true
+    active: ALL
     maxTemp: 30.0
     tempBaseLevel: 20.0
+    nightAdjust: 0
+    dayAdjust: 0
     heatCharacteristics:
       - tempMax: 20.0
         heatFactor: 6.5e-4
@@ -109,9 +122,11 @@ circuits:
         heatFactor: 6.5e-4
   - index: 6
     description: our bedroom
-    active: true
+    active: ALL
     maxTemp: 30.0
     tempBaseLevel: 20.0
+    nightAdjust: 0
+    dayAdjust: 0
     heatCharacteristics:
       - tempMax: 20.0
         heatFactor: 8.3333e-4
@@ -125,9 +140,11 @@ circuits:
         heatFactor: 8.3333e-4
   - index: 7
     description: our bathroom
-    active: true
+    active: ALL
     maxTemp: 40.0
     tempBaseLevel: 20.0
+    nightAdjust: 0
+    dayAdjust: 0
     heatCharacteristics:
       - tempMax: 20.0
         heatFactor: 9.0074e-4
@@ -141,9 +158,11 @@ circuits:
         heatFactor: 9.0074e-4
   - index: 8
     description: bathroom
-    active: true
+    active: ALL
     maxTemp: 35.0
     tempBaseLevel: 15.0
+    nightAdjust: 0
+    dayAdjust: 0
     heatCharacteristics:
       - tempMax: 20.0
         heatFactor: 1.0102e-3
@@ -157,9 +176,11 @@ circuits:
         heatFactor: 1.0102e-3
   - index: 9
     description: technical room
-    active: true
+    active: ALL
     maxTemp: 35.0
     tempBaseLevel: 20.0
+    nightAdjust: 0
+    dayAdjust: 0
     heatCharacteristics:
       - tempMax: 20.0
         heatFactor: 8.3333e-4

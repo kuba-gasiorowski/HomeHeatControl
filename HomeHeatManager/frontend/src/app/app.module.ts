@@ -16,6 +16,7 @@ import { InputTimeDirective } from './shared/directives/input-time.directive';
 import { InputPercentDirective } from './shared/directives/input-percent.directive';
 import { InputTemperatureDirective } from './shared/directives/input-temperature.directive';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
+import { ModalLoadingComponent } from './components/modal-loading/modal-loading.component';
 
 @NgModule({
   declarations: [
@@ -29,6 +30,7 @@ import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
     InputTimeDirective,
     InputPercentDirective,
     InputTemperatureDirective,
+    ModalLoadingComponent,
   ],
   imports: [
     BrowserModule,

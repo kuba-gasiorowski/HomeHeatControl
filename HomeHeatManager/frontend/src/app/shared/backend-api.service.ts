@@ -4,7 +4,7 @@ import {
   HttpErrorResponse,
   HttpHeaders,
 } from '@angular/common/http';
-import { CircuitConfig, Config, HeatStatus } from '../models/api/heat-status';
+import { CircuitConfig, CircuitMode, Config, HeatStatus } from '../models/api/heat-status';
 import {
   map,
   Observable,
@@ -54,7 +54,7 @@ export class BackendApiService {
     return this.http.get<Config>(this.apiUrl + '/config', this.httpOptions);
   }
 
-  updateCircuit(index: number, active: boolean): Observable<CircuitConfig> {
+  updateCircuit(index: number, active: CircuitMode): Observable<CircuitConfig> {
     return this.http
       .post<CircuitConfig>(
         this.apiUrl + '/config/circuit/' + index,
@@ -76,7 +76,7 @@ export class BackendApiService {
           updatedConfig.circuits?.forEach(
             (value: CircuitConfig, index: number) => {
               this.lastStatus.circuitStatuses[index].circuitStatus =
-                value.active as boolean;
+                value.active as CircuitMode;
             }
           );
         })

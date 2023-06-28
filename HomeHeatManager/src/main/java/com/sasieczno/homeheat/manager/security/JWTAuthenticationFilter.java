@@ -1,7 +1,5 @@
 package com.sasieczno.homeheat.manager.security;
 
-import com.auth0.jwt.JWT;
-import com.auth0.jwt.algorithms.Algorithm;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sasieczno.homeheat.manager.config.AppConfig;
 import com.sasieczno.homeheat.manager.repository.TokenRepository;
@@ -22,9 +20,9 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Date;
-import java.util.UUID;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * The authentication filter. It provides the username/password authentication
@@ -34,7 +32,6 @@ import java.util.UUID;
 @Component
 public class JWTAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
 
-    public static final String SECRET = "oVZb0eZtmGaDiUmVrqfO98Duek7ZTpjD";
     public static final String AUTH_URI = "/api/auth";
     public static final String LOGIN_URI = AUTH_URI + "/login";
     public static final String REFRESH_URI = AUTH_URI + "/refresh";
@@ -53,7 +50,7 @@ public class JWTAuthenticationFilter extends UsernamePasswordAuthenticationFilte
     private TokenService tokenService;
 
     @PostConstruct
-    private void init() {
+    public void init() {
         this.setFilterProcessesUrl(AUTH_URI + "/*");
     }
 
@@ -125,22 +122,18 @@ public class JWTAuthenticationFilter extends UsernamePasswordAuthenticationFilte
         if (authResult instanceof UsernamePasswordAuthenticationToken) {
             UserDetails userDetails = (UserDetails) authResult.getPrincipal();
             log.debug("Successful authentication of user {}, producing token", userDetails.getUsername());
-            long refreshTokenExpiry = System.currentTimeMillis() + appConfig.managerRefreshTokenExpiry;
-            String refreshToken = JWT.create()
-                    .withClaim("UUID", UUID.randomUUID().toString())
-                    .withExpiresAt(new Date(refreshTokenExpiry))
-                    .sign(Algorithm.HMAC512(SECRET));
-
+            AtomicLong refreshTokenExpiry = new AtomicLong(-1);
+            String refreshToken = tokenService.generateRefreshToken(refreshTokenExpiry);
             AuthData authData = new AuthData(userDetails.getUsername(), tokenService.generateAccessToken(userDetails.getUsername()),
-                    refreshToken, refreshTokenExpiry);
+                    refreshToken, refreshTokenExpiry.get());
             tokenRepository.saveAuthData(authData);
             body = objectMapper.writeValueAsString(authData);
             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         } else if (authResult instanceof RefreshTokenAuthentication) {
-            log.debug("Successful refresh token, returning new access token");
+            log.debug("Successful refresh token, returning new refresh/access token pair");
             if (authResult.getCredentials() != null) {
-                body = (String) authResult.getCredentials();
-                response.setContentType(MediaType.TEXT_PLAIN_VALUE);
+                body = objectMapper.writeValueAsString(authResult.getCredentials());
+                response.setContentType(MediaType.APPLICATION_JSON_VALUE);
             }
         } else {
             throw new RuntimeException("Unexpected authentication result: " + authResult.getClass() + ", " + authResult);
@@ -153,9 +146,9 @@ public class JWTAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 
     @Override
     protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response, AuthenticationException failed) throws IOException, ServletException {
-        response.setStatus(401);
-        response.setContentType("application/json");
-        response.setCharacterEncoding("UTF-8");
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        response.setCharacterEncoding(StandardCharsets.UTF_8.displayName());
         response.getWriter().write(objectMapper.writeValueAsString(new AuthError(failed.getMessage())));
         response.getWriter().flush();
     }

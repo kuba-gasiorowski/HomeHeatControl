@@ -3,14 +3,13 @@ Description=Home Heating service
 After=network.target
 
 [Service]
-ExecStart=/usr/bin/python3 -u HomeHeat.py
-WorkingDirectory=/home/pi/HomeHeatControl
+ExecStart=/usr/bin/python3 -u /opt/homeheat/bin/HomeHeat.py -c /opt/homeheat/conf/HomeHeat.yml
+WorkingDirectory=/var/log/homeheat
 StandardOutput=inherit
 StandardError=inherit
 Restart=always
 RestartSec=50
-User=pi
-ExecStartPre=-HomeHeatPreStart.sh
+ExecStartPre=-/opt/homeheat/bin/HomeHeatPreStart.sh
 
 [Install]
 WantedBy=multi-user.target

@@ -11,6 +11,7 @@ import {
 import { ConfirmDialogService } from '../confirm-dialog/confirm-dialog.service';
 import { CircuitConfig, Config, Time } from '../../models/api/heat-status';
 import { BackendApiService } from '../../shared/backend-api.service';
+import { ModalLoadingService } from '../modal-loading/modal-loading.service';
 
 @Component({
   selector: 'app-general-config',
@@ -21,7 +22,8 @@ export class GeneralConfigComponent implements OnInit {
   constructor(
     private backendApiService: BackendApiService,
     private confirmDialogService: ConfirmDialogService,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private loadingService: ModalLoadingService
   ) {
     this.configFormGroup = this.fb.group(
       {
@@ -42,8 +44,10 @@ export class GeneralConfigComponent implements OnInit {
   }
 
   configFormGroup: FormGroup;
-
+  public OperationType = OperationType;
   isActionExecuted = false;
+  opType = OperationType.LOAD;
+  opError: string = '';
 
   getCircuitsFormArray(): FormArray {
     return this.configFormGroup.get('circuits') as FormArray;
@@ -72,8 +76,20 @@ export class GeneralConfigComponent implements OnInit {
    * populates form using appropriate formatting if necessary.
    */
   getData(): void {
+    this.opType = OperationType.LOAD;
+    this.opError = '';
+    this.loadingService.invokeLoading(true);
     this.isActionExecuted = true;
-    this.backendApiService.getConfig().subscribe((res) => this.fillForm(res));
+    this.backendApiService.getConfig().subscribe({
+      next: (res) => {
+        this.fillForm(res);
+        this.loadingService.invokeLoading(false);
+      },
+      error: (err) => {
+        this.loadingService.invokeLoading(false);
+        this.opError = err;
+      },
+    });
   }
 
   fillForm(config: Config): void {
@@ -131,6 +147,9 @@ export class GeneralConfigComponent implements OnInit {
 
   saveChanges(): void {
     if (!this.configFormGroup.dirty) return;
+    this.opType = OperationType.SAVE;
+    this.opError = '';
+    this.loadingService.invokeLoading(true);
     let config: Config = new Config();
     let circuitArr: CircuitConfig[] = [];
     Object.keys(this.configFormGroup.controls).forEach((key) => {
@@ -157,9 +176,16 @@ export class GeneralConfigComponent implements OnInit {
     if (circuitArr.length > 0) {
       config.circuits = circuitArr;
     }
-    this.backendApiService
-      .updateConfig(config)
-      .subscribe((res) => this.fillForm(res));
+    this.backendApiService.updateConfig(config).subscribe({
+      next: (res) => {
+        this.fillForm(res);
+        this.loadingService.invokeLoading(false);
+      },
+      error: (err) => {
+        this.opError = err;
+        this.loadingService.invokeLoading(false);
+      },
+    });
   }
 
   cancelChanges(): void {
@@ -296,4 +322,9 @@ export class GeneralConfigComponent implements OnInit {
     }
     return null;
   }
+}
+
+export enum OperationType {
+  SAVE,
+  LOAD,
 }

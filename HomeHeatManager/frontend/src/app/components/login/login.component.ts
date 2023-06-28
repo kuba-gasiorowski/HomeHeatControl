@@ -1,8 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
-import { catchError, NEVER, throwError } from 'rxjs';
 import { AuthService } from '../../auth/auth.service';
+import { ModalLoadingService } from '../modal-loading/modal-loading.service';
 
 @Component({
   selector: 'app-login',
@@ -17,7 +17,8 @@ export class LoginComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private auth: AuthService,
-    private router: Router
+    private router: Router,
+    private loadingService: ModalLoadingService
   ) {
     this.loginForm = this.fb.group({
       username: ['', Validators.required],
@@ -26,16 +27,19 @@ export class LoginComponent implements OnInit {
   }
 
   login() {
+    this.loadingService.invokeLoading(true);
     this.errorMessage = '';
     this.loginButtonDisabled = true;
     const val = this.loginForm.value;
     if (val.username && val.password) {
       this.auth.login(val.username, val.password).subscribe({
         next: () => {
+          this.loadingService.invokeLoading(false);
           this.loginButtonDisabled = false;
           this.router.navigateByUrl('/', { skipLocationChange: true });
         },
         error: (err) => {
+          this.loadingService.invokeLoading(false);
           this.errorMessage = err.error.error;
           this.loginButtonDisabled = false;
         },

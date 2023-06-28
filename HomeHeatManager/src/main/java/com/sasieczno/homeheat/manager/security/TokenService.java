@@ -2,11 +2,14 @@ package com.sasieczno.homeheat.manager.security;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
+import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.sasieczno.homeheat.manager.config.AppConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicLong;
 
 
 @Service
@@ -25,8 +28,22 @@ public class TokenService {
         return JWT.create()
                 .withSubject(username)
                 .withExpiresAt(new Date(tokenExpiry))
-                .sign(Algorithm.HMAC512(JWTAuthenticationFilter.SECRET));
+                .sign(Algorithm.HMAC512(appConfig.managerTokenSecret));
     }
 
+    public String generateRefreshToken(AtomicLong refreshTokenExpiry) {
+        if (refreshTokenExpiry.get() == -1)
+            refreshTokenExpiry.set(System.currentTimeMillis() + appConfig.managerRefreshTokenExpiry);
+        return JWT.create()
+                .withClaim("UUID", UUID.randomUUID().toString())
+                .withExpiresAt(new Date(refreshTokenExpiry.get()))
+                .sign(Algorithm.HMAC512(appConfig.managerTokenSecret));
+    }
 
+    public String validateToken(String token) throws JWTVerificationException {
+        return JWT.require(Algorithm.HMAC512(appConfig.managerTokenSecret.getBytes()))
+                .build()
+                .verify(token)
+                .getSubject();
+    }
 }

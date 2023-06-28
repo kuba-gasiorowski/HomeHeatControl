@@ -5,33 +5,33 @@ import org.springframework.security.authentication.AbstractAuthenticationToken;
 import java.util.ArrayList;
 
 public class RefreshTokenAuthentication extends AbstractAuthenticationToken {
-    private Object principal;
-    private Object credentials;
+    private String refreshToken;
+    private AuthData authData;
     private boolean logout = false;
 
-    public RefreshTokenAuthentication(Object principal) {
-        this(principal, false);
+    public RefreshTokenAuthentication(String refreshToken) {
+        this(refreshToken, false);
     }
 
-    public RefreshTokenAuthentication(Object principal, boolean logout) {
+    public RefreshTokenAuthentication(String refreshToken, boolean logout) {
         super(new ArrayList<>());
-        this.principal = principal;
+        this.refreshToken = refreshToken;
         setAuthenticated(true);
         this.logout = logout;
     }
 
-    public void setCredentials(String accessToken) {
-        this.credentials = accessToken;
+    public void setCredentials(AuthData authData) {
+        this.authData = authData;
     }
 
     @Override
     public Object getCredentials() {
-        return credentials;
+        return authData;
     }
 
     @Override
     public Object getPrincipal() {
-        return principal;
+        return refreshToken;
     }
 
     public boolean isLogout() { return logout; }

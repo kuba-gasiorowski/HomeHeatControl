@@ -19,6 +19,7 @@ public class ControllerConfig {
     LocalTime nightEndTime;
     LocalTime dayStartTime;
     LocalTime dayEndTime;
+    String logConfig;
     String logLevel;
     String managementServer;
     ArrayList<Circuit> circuits;
@@ -40,6 +41,8 @@ public class ControllerConfig {
             dayStartTime = cfg.getDayStartTime();
         if (cfg.getDayEndTime() != null)
             dayEndTime = cfg.getDayEndTime();
+        if (cfg.getLogConfig() != null)
+            logConfig = cfg.getLogConfig();
         if (cfg.getLogLevel() != null)
             logLevel = cfg.getLogLevel();
         if (cfg.getManagementServer() != null)
@@ -60,7 +63,7 @@ public class ControllerConfig {
     public static class Circuit {
         int index;
         String description;
-        Boolean active;
+        CircuitMode active;
         Double maxTemp;
         Double tempBaseLevel;
         Double nightAdjust;

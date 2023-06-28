@@ -21,14 +21,26 @@
   >
 </td>
 <td>
-  <span class="form-check form-switch"
-    ><input
-      class="form-check-input"
-      type="checkbox"
-      id="checkboxControllerStatus"
-      [(ngModel)]="circuitData.active"
-      (click)="changeActive($event)"
-      data-bs-toggle="modal"
-      data-bs-target="#confirmModal"
-  /></span>
+  <span class="btn-group" role="group">
+    <input type="radio" class="btn-check" id="circuitStateOff{{ circuitData.index }}"
+           name="circuitStateOff{{ circuitData.index }}"
+           autocomplete="off" value="OFF" [(ngModel)]="circuitData.active"
+           (change)="changeActive($event)" data-bs-toggle="modal" data-bs-target="#confirmModal">
+    <label class="btn btn-outline-primary" for="circuitStateOff{{ circuitData.index }}">OFF</label>
+    <input type="radio" class="btn-check" id="circuitStateNight{{ circuitData.index }}"
+           name="circuitStateNight{{ circuitData.index }}"
+           autocomplete="off" value="NIGHT" [(ngModel)]="circuitData.active"
+           (change)="changeActive($event)" data-bs-toggle="modal" data-bs-target="#confirmModal">
+    <label class="btn btn-outline-primary" for="circuitStateNight{{ circuitData.index }}">NIGHT</label>
+    <input type="radio" class="btn-check" id="circuitStateDay{{ circuitData.index }}"
+           name="circuitStateDay{{ circuitData.index }}"
+           autocomplete="off" value="DAY" [(ngModel)]="circuitData.active"
+           (change)="changeActive($event)" data-bs-toggle="modal" data-bs-target="#confirmModal">
+    <label class="btn btn-outline-primary" for="circuitStateDay{{ circuitData.index }}">DAY</label>
+    <input type="radio" class="btn-check" id="circuitStateAll{{ circuitData.index }}"
+           name="circuitStateAll{{ circuitData.index }}"
+           autocomplete="off" value="ALL" [(ngModel)]="circuitData.active"
+           (change)="changeActive($event)" data-bs-toggle="modal" data-bs-target="#confirmModal">
+    <label class="btn btn-outline-primary" for="circuitStateAll{{ circuitData.index }}">ALL</label>
+  </span>
 </td>

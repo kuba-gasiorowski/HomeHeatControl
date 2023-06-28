@@ -3,6 +3,7 @@ import { FormatterService } from '../../helpers/formatter.service';
 import { BackendApiService } from '../../shared/backend-api.service';
 import { CircuitData } from '../../models/circuit-heating-data';
 import { ConfirmDialogService } from '../confirm-dialog/confirm-dialog.service';
+import { CircuitMode } from 'src/app/models/api/heat-status';
 
 @Component({
   selector: '[app-circuit-data]',
@@ -16,46 +17,51 @@ export class CircuitDataComponent implements OnInit {
   @Input()
   circuitData: CircuitData = new CircuitData();
 
+  lastCircuitMode: CircuitMode = CircuitMode.OFF;
+
   constructor(
     private formatterService: FormatterService,
     private confirmDialogService: ConfirmDialogService,
     public backendApiService: BackendApiService
   ) {}
 
-  ngOnInit(): void {}
+  ngOnInit(): void {
+    this.lastCircuitMode = this.circuitData.active;
+  }
 
-  confirmChangeActive(isChecked: boolean): void {
+  confirmChangeActive(event: Event, circuitMode: CircuitMode): void {
     this.backendApiService
-      .updateCircuit(this.circuitData.index, isChecked)
+      .updateCircuit(this.circuitData.index, circuitMode)
       .subscribe((result) => {
-        if (typeof result.active === 'boolean') {
+        if (result.active !== undefined) {
           this.circuitData.active = result.active;
           this.backendApiService.lastStatus.circuitStatuses[
             this.index
           ].circuitStatus = result.active;
+          this.lastCircuitMode = result.active;
         }
       });
   }
 
-  cancelChangeActive(event: Event, isChecked: boolean): void {
-    this.circuitData.active = !isChecked;
+  cancelChangeActive(event: Event): void {
+    this.circuitData.active = this.lastCircuitMode;
     event.preventDefault();
   }
 
   changeActive(event: Event) {
-    const isChecked = (<HTMLInputElement>event.target).checked;
+    const mode = (<HTMLInputElement>event.target).value;
+    const circuitMode: CircuitMode = CircuitMode[mode as keyof typeof CircuitMode];
     const message =
       'Confirm change status of circuit ' +
       this.circuitData.index +
-      ' to ' +
-      (isChecked ? 'active' : 'disabled');
+      ' to ' + mode;
     this.confirmDialogService.doConfirm(
       message,
       () => {
-        this.confirmChangeActive(isChecked);
+        this.confirmChangeActive(event, circuitMode);
       },
       () => {
-        this.cancelChangeActive(event, isChecked);
+        this.cancelChangeActive(event);
       }
     );
   }

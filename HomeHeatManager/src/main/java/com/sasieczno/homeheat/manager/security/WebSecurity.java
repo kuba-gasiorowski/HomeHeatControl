@@ -46,9 +46,13 @@ public class WebSecurity extends WebSecurityConfigurerAdapter {
 
     private JWTAuthenticationFilter jwtAuthenticationFilter;
 
+    private JWTAuthorizationFilter jwtAuthorizationFilter;
+
     @Autowired
-    public void setJWTAuthenticationFilter(@Lazy JWTAuthenticationFilter jwtAuthenticationFilter) {
+    public void setJWTAuthenticationFilter(@Lazy JWTAuthenticationFilter jwtAuthenticationFilter,
+                                           @Lazy JWTAuthorizationFilter jwtAuthorizationFilter) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.jwtAuthorizationFilter = jwtAuthorizationFilter;
     }
 
     @Override
@@ -60,7 +64,7 @@ public class WebSecurity extends WebSecurityConfigurerAdapter {
                 .exceptionHandling().authenticationEntryPoint(restAuthEntryPoint)
                 .and()
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-                .addFilter(new JWTAuthorizationFilter(authenticationManager()))
+                .addFilter(jwtAuthorizationFilter)
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
     }
 

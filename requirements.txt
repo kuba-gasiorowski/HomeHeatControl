@@ -1,2 +1,3 @@
-pyyaml
+RPi.GPIO
+PyYAML
 adafruit-circuitpython-ads1x15

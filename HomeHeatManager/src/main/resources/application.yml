@@ -1,12 +1,14 @@
 server:
-  port: 8080
+  port: 80
 manager:
-  version: "0.0.1"
+  version: "1.0"
   udp:
     port: 20001
-    timeout: 61000
+    timeout: 81000
   token:
     expiry: 900000
+    expiredRemovalPeriod: 60000
+    secret: oVZb0eZtmGaDiUmVrqfO98Duek7ZTpjD
   refreshToken:
     expiry: 3600000
   admin:
@@ -14,5 +16,5 @@ manager:
   user:
     password: $2y$10$Yfife..KkelrQqz5UpdnIeG56bboCAg1fdoUqrPJQrOnC.1uv.spa
 controller:
-  configFile: "/home/pi/HomeHeatControl/config/HomeHeat.yml"
+  configFile: "/opt/homeheat/conf/HomeHeat.yml"
 

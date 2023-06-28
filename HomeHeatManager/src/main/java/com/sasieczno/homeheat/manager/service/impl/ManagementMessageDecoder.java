@@ -1,8 +1,11 @@
 package com.sasieczno.homeheat.manager.service.impl;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
+@Slf4j
 public enum ManagementMessageDecoder {
     MESSAGE_TIMESTAMP(8, Double.class),
     HEATING_PERIOD(1, Byte.class),
@@ -28,9 +31,9 @@ public enum ManagementMessageDecoder {
 
     public <T> T decodeValue(byte[] buffer, int offset) {
         if (fieldType.equals(Double.class)) {
-            return (T) Double.valueOf(ByteBuffer.wrap(buffer, offset, fieldLength).order(ByteOrder.LITTLE_ENDIAN).getDouble());
+            return (T) Double.valueOf(ByteBuffer.wrap(buffer, offset, fieldLength).getDouble());
         } else if (fieldType.equals(Long.class)) {
-            return (T) Long.valueOf(ByteBuffer.wrap(buffer, offset, fieldLength).order(ByteOrder.LITTLE_ENDIAN).getLong());
+            return (T) Long.valueOf(ByteBuffer.wrap(buffer, offset, fieldLength).getLong());
         } else if (fieldType.equals(Byte.class)) {
             return (T) Integer.valueOf(buffer[offset]);
         } else if (fieldType.equals(Boolean.class)) {

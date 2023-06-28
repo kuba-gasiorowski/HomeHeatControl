@@ -8,11 +8,13 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 @Configuration
 @EnableConfigurationProperties
 @PropertySource(value="classpath:application.yml")
+@EnableScheduling
 public class AppConfig {
 
     @Value("${manager.version}")
@@ -30,14 +32,20 @@ public class AppConfig {
     @Value("${manager.token.expiry}")
     public Long managerTokenExpiry = 180000L;
 
-    @Value ("${manager.refreshToken.expiry}")
+    @Value("${manager.refreshToken.expiry}")
     public Long managerRefreshTokenExpiry = 18000000L;
+
+    @Value("${manager.token.secret}")
+    public String managerTokenSecret;
 
     @Value("${manager.admin.password}")
     public String adminPassword;
 
     @Value("${manager.user.password}")
     public String userPassword;
+
+    @Value("${manager.token.expiredRemovalPeriod}")
+    public Long managerTokenExpiredRemovalPeriod = 60000L;
 
     @Bean
     @Primary

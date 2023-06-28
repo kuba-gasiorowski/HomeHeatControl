@@ -1,6 +1,7 @@
 package com.sasieczno.homeheat.manager.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
@@ -11,6 +12,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
+@Slf4j
 @Component
 public class RestAuthEntryPoint implements AuthenticationEntryPoint {
 
@@ -19,6 +21,7 @@ public class RestAuthEntryPoint implements AuthenticationEntryPoint {
 
     @Override
     public void commence(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, AuthenticationException e) throws IOException, ServletException {
+        log.debug("Authentication error", e);
         AuthError authError = new AuthError(e.getMessage());
         httpServletResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED, objectMapper.writeValueAsString(authError));
     }

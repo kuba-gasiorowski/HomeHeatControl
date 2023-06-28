@@ -3,10 +3,9 @@ package com.sasieczno.homeheat.manager.repository.impl;
 import com.sasieczno.homeheat.manager.repository.TokenRepository;
 import com.sasieczno.homeheat.manager.security.AuthData;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Repository;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import java.util.HashMap;
 
 /**
@@ -17,11 +16,8 @@ import java.util.HashMap;
  */
 @Slf4j
 @Repository
-public class TokenRepositoryImpl implements TokenRepository, Runnable {
-    HashMap<String, AuthData> tokenDatabase = new HashMap<>();
-
-    private boolean isRunning = false;
-    Thread checker;
+public class TokenRepositoryImpl implements TokenRepository {
+    private HashMap<String, AuthData> tokenDatabase = new HashMap<>();
 
     /**
      * Returns the authentication data for the given refresh token
@@ -34,7 +30,7 @@ public class TokenRepositoryImpl implements TokenRepository, Runnable {
     public AuthData getAuthDataByRefreshToken(String refreshToken) {
         AuthData tokenData = tokenDatabase.get(refreshToken);
         if (tokenData != null) {
-            if (tokenData.getExpiryDate() < System.currentTimeMillis()) {
+            if (tokenData.getExpiryDate() < System.currentTimeMillis() || !tokenData.isValid()) {
                 tokenDatabase.remove(refreshToken);
                 return null;
             }
@@ -59,39 +55,18 @@ public class TokenRepositoryImpl implements TokenRepository, Runnable {
     @Override
     public void removeAuthData(AuthData authData) { tokenDatabase.remove(authData.getRefreshToken()); }
 
-    @PostConstruct
-    void init() {
-        isRunning = true;
-        checker = new Thread(this, "ExpiredRefreshTokenChecker");
-        checker.start();
-    }
-
-    @PreDestroy
-    void stopChecker() {
-        isRunning = false;
-        try {
-            checker.interrupt();
-            checker.join();
-        } catch (InterruptedException e) {}
-    }
-
     /**
      * The thread periodically removing expired authentication data.
      */
-    @Override
-    public void run() {
-        while (isRunning) {
-            tokenDatabase.entrySet()
-                    .removeIf(item -> {
-                        boolean remove = item.getValue().getExpiryDate() < System.currentTimeMillis();
-                        if (remove) {
-                            log.debug("Removing expired token data: {}", item);
-                        }
-                        return remove;
-                    });
-            try {
-                Thread.sleep(60000);
-            } catch (InterruptedException e) {}
-        }
+    @Scheduled(fixedDelayString = "${manager.token.expiredRemovalPeriod}")
+    public void removeExpiredTokens() {
+        tokenDatabase.entrySet()
+                .removeIf(item -> {
+                    boolean remove = item.getValue().getExpiryDate() < System.currentTimeMillis();
+                    if (remove) {
+                        log.debug("Removing expired token data: {}", item);
+                    }
+                    return remove;
+                });
     }
 }

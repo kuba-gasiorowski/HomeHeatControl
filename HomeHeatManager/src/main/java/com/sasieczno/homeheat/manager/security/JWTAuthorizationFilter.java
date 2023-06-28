@@ -1,13 +1,12 @@
 package com.sasieczno.homeheat.manager.security;
 
-import com.auth0.jwt.JWT;
-import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
+import org.springframework.stereotype.Component;
 
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
@@ -19,14 +18,18 @@ import java.util.ArrayList;
 /**
  * The filter validates the JWT access token provided in the authorization header.
  */
+@Component
 @Slf4j
 public class JWTAuthorizationFilter extends BasicAuthenticationFilter {
 
     public static String AUTH_HEADER = "Authorization";
     public static String TOKEN_PREFIX = "Bearer ";
 
-    public JWTAuthorizationFilter(AuthenticationManager authenticationManager) {
+    private final TokenService tokenService;
+
+    public JWTAuthorizationFilter(AuthenticationManager authenticationManager, TokenService tokenService) {
         super(authenticationManager);
+        this.tokenService = tokenService;
     }
 
     @Override
@@ -45,10 +48,7 @@ public class JWTAuthorizationFilter extends BasicAuthenticationFilter {
     private UsernamePasswordAuthenticationToken getAuthenticationtToken(String token) {
         try {
             if (token != null) {
-                String user = JWT.require(Algorithm.HMAC512(JWTAuthenticationFilter.SECRET.getBytes()))
-                        .build()
-                        .verify(token)
-                        .getSubject();
+                String user = tokenService.validateToken(token);
                 if (user != null) {
                     return new UsernamePasswordAuthenticationToken(user, null, new ArrayList<>());
                 }

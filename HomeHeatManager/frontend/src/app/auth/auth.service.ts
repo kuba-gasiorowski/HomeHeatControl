@@ -83,10 +83,10 @@ export class AuthService {
     const refreshToken = window.sessionStorage.getItem('refresh_token');
     if (refreshToken) {
       return this.http
-        .post<string>(this.authUrl + '/refresh', refreshToken, {
-          responseType: 'text' as 'json',
-        })
-        .pipe(map((token) => sessionStorage.setItem('access_token', token)))
+        .post<AuthData>(this.authUrl + '/refresh', refreshToken)
+        .pipe(
+          map((authData) => this.saveAuthData(authData))
+        )
         .pipe(shareReplay());
     } else {
       this.removeAuthData();
