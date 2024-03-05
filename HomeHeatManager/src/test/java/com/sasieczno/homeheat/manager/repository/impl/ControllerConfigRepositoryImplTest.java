@@ -18,11 +18,8 @@ public class ControllerConfigRepositoryImplTest {
 
     @BeforeAll
     public void setup() {
-        testObj = new ControllerConfigRepositoryImpl();
-        cfg = new AppConfig();
-        testObj.appConfig = cfg;
         jacksonConfiguration = new JacksonConfiguration();
-        testObj.objectMapper = jacksonConfiguration.getHeatControllerObjectMapper();
+        testObj = new ControllerConfigRepositoryImpl(new AppConfig(), jacksonConfiguration.getHeatControllerObjectMapper());
     }
 
     @Test

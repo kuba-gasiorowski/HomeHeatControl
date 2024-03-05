@@ -2,18 +2,20 @@ package com.sasieczno.homeheat.manager.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sasieczno.homeheat.manager.config.AppConfig;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.config.BeanIds;
+import org.springframework.security.authentication.ProviderManager;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -24,25 +26,20 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
  * and authorization filters.
  */
 @EnableWebSecurity
-public class WebSecurity extends WebSecurityConfigurerAdapter {
+@RequiredArgsConstructor
+public class WebSecurity {
 
-    @Autowired
-    AppConfig appConfig;
+    private final AppConfig appConfig;
 
-    @Autowired
-    UserDetailsService userDetailsService;
+    private final UserDetailsService userDetailsService;
 
-    @Autowired
-    BCryptPasswordEncoder bCryptPasswordEncoder;
+    private final BCryptPasswordEncoder bCryptPasswordEncoder;
 
-    @Autowired
-    ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper;
 
-    @Autowired
-    RefreshTokenAuthenticationProvider refreshTokenAuthenticationProvider;
+    private final RefreshTokenAuthenticationProvider refreshTokenAuthenticationProvider;
 
-    @Autowired
-    RestAuthEntryPoint restAuthEntryPoint;
+    private final RestAuthEntryPoint restAuthEntryPoint;
 
     private JWTAuthenticationFilter jwtAuthenticationFilter;
 
@@ -55,20 +52,22 @@ public class WebSecurity extends WebSecurityConfigurerAdapter {
         this.jwtAuthorizationFilter = jwtAuthorizationFilter;
     }
 
-    @Override
-    protected void configure(HttpSecurity httpSecurity) throws Exception {
-        httpSecurity.cors().and().csrf().disable().authorizeRequests()
-                .antMatchers("/api/**").authenticated()
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        return http.cors().and().csrf().disable()
+                .authorizeHttpRequests().requestMatchers("/api/**").authenticated()
                 .anyRequest().permitAll()
                 .and()
                 .exceptionHandling().authenticationEntryPoint(restAuthEntryPoint)
                 .and()
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilter(jwtAuthorizationFilter)
-                .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
+                .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                .and().build();
     }
 
-    @Override
+    @Autowired
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
         auth.userDetailsService(userDetailsService).passwordEncoder(bCryptPasswordEncoder);
         auth.authenticationProvider(refreshTokenAuthenticationProvider);
@@ -82,9 +81,11 @@ public class WebSecurity extends WebSecurityConfigurerAdapter {
         return source;
     }
 
-    @Bean(name = BeanIds.AUTHENTICATION_MANAGER)
-    @Override
-    public AuthenticationManager authenticationManagerBean() throws Exception {
-        return super.authenticationManagerBean();
+    @Bean
+    public AuthenticationManager authenticationManagerBean() {
+        DaoAuthenticationProvider authenticationProvider = new DaoAuthenticationProvider();
+        authenticationProvider.setUserDetailsService(userDetailsService);
+        authenticationProvider.setPasswordEncoder(bCryptPasswordEncoder);
+        return new ProviderManager(refreshTokenAuthenticationProvider, authenticationProvider);
     }
 }

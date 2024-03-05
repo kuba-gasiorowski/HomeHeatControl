@@ -47,8 +47,8 @@ public class ControllerRepositoryImpl implements ControllerRepository {
     @Scheduled(fixedRate = 60000)
     public void monitorControllerProcess() {
         state = controllerService.getActiveState();
-        activeSince = controllerService.getActiveEnterTimestamp();
-        inactiveSince = controllerService.getInactiveEnterTimestamp();
+        activeSince = controllerService.getActiveEnterTimestamp()/1000;
+        inactiveSince = controllerService.getInactiveEnterTimestamp()/1000;
         pid = controllerService.getMainPID();
         restarts = controllerService.getNRestarts();
     }

@@ -4,8 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sasieczno.homeheat.manager.config.AppConfig;
 import com.sasieczno.homeheat.manager.model.ControllerConfig;
 import com.sasieczno.homeheat.manager.repository.ControllerConfigRepository;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Repository;
 
@@ -19,16 +19,15 @@ import java.nio.file.StandardCopyOption;
 /**
  * The heating controller configuration - YAML file read and modification.
  */
+@RequiredArgsConstructor
 @Slf4j
 @Repository("ControllerConfigRepository")
 public class ControllerConfigRepositoryImpl implements ControllerConfigRepository {
 
-    @Autowired
-    AppConfig appConfig;
+    private final AppConfig appConfig;
 
     @Qualifier("yamlConfigObjectMapper")
-    @Autowired
-    ObjectMapper objectMapper;
+    private final ObjectMapper yamlConfigObjectMapper;
 
     /**
      * Updates the specific heating circuit configuration.
@@ -40,7 +39,7 @@ public class ControllerConfigRepositoryImpl implements ControllerConfigRepositor
         boolean result = false;
         try {
             File controllerConfigFile = new File(appConfig.controllerConfigFile);
-            ControllerConfig controllerConfig = objectMapper.readValue(controllerConfigFile, ControllerConfig.class);
+            ControllerConfig controllerConfig = yamlConfigObjectMapper.readValue(controllerConfigFile, ControllerConfig.class);
             if (controllerConfig != null && controllerConfig.getCircuits() != null) {
                 ControllerConfig.Circuit updatedCircuit = null;
                 for (int i = 0; i <= controllerConfig.getCircuits().size(); i++) {
@@ -64,12 +63,11 @@ public class ControllerConfigRepositoryImpl implements ControllerConfigRepositor
     public ControllerConfig getConfig() {
         ControllerConfig controllerConfig = null;
         try {
-            controllerConfig = objectMapper.readValue(new File(appConfig.controllerConfigFile), ControllerConfig.class);
+            controllerConfig = yamlConfigObjectMapper.readValue(new File(appConfig.controllerConfigFile), ControllerConfig.class);
         } catch (IOException e) {
             log.warn("getConfig: Could not read the controller config file", e);
-        } finally {
-            return controllerConfig;
         }
+        return controllerConfig;
     }
 
     @Override
@@ -78,10 +76,10 @@ public class ControllerConfigRepositoryImpl implements ControllerConfigRepositor
         Path controllerConfigPath = controllerConfigFile.toPath();
         Path tmpConfigPath = null;
         try {
-            ControllerConfig config = objectMapper.readValue(controllerConfigFile, ControllerConfig.class);
+            ControllerConfig config = yamlConfigObjectMapper.readValue(controllerConfigFile, ControllerConfig.class);
             config.copy(controllerConfig);
             tmpConfigPath = java.nio.file.Files.createTempFile(controllerConfigPath.getFileName().toString(), ".tmp");
-            objectMapper.writeValue(tmpConfigPath.toFile(), config);
+            yamlConfigObjectMapper.writeValue(tmpConfigPath.toFile(), config);
             try {
                 Files.move(tmpConfigPath, controllerConfigPath, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
             } catch (AtomicMoveNotSupportedException e) {

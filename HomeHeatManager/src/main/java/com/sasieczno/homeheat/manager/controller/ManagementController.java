@@ -9,8 +9,8 @@ import com.sasieczno.homeheat.manager.model.HeatingData;
 import com.sasieczno.homeheat.manager.repository.ControllerConfigRepository;
 import com.sasieczno.homeheat.manager.repository.ControllerRepository;
 import com.sasieczno.homeheat.manager.service.ControllerStatusService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.http.HttpStatus;
@@ -23,28 +23,26 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.Calendar;
+import java.time.Instant;
 import java.util.LinkedList;
 
 /**
  * The controller of the manager REST interface implementation.
  */
 @Slf4j
-@RestController()
+@RestController
 @RequestMapping("api")
+@RequiredArgsConstructor
 public class ManagementController {
 
-    @Autowired
-    ControllerRepository controllerRepository;
+    private final ControllerRepository controllerRepository;
 
-    @Autowired
-    ControllerConfigRepository controllerConfigRepository;
+    private final ControllerConfigRepository controllerConfigRepository;
 
-    @Autowired
-    ControllerStatusService controllerStatusService;
+    private final ControllerStatusService controllerStatusService;
 
-    @Autowired
-    AppConfig appConfig;
+    private final AppConfig appConfig;
+
 
     @GetMapping(value = "status", produces = MediaType.APPLICATION_JSON_VALUE)
     public HeatStatus getStatus() {
@@ -99,7 +97,7 @@ public class ManagementController {
 
     void transportData(HeatingData heatingData, HeatStatus heatStatus) {
         if (heatingData.getLastMessageTime() != null)
-            heatStatus.setLastMessageTime((Calendar) heatingData.getLastMessageTime().clone());
+            heatStatus.setLastMessageTime(Instant.from(heatingData.getLastMessageTime()));
         heatStatus.setHeatingPeriod(heatingData.getHeatingPeriod());
         heatStatus.setExternalTemperature(heatingData.getExternalTemperature());
         heatStatus.setAvgExternalTemperature(heatingData.getAverageExternalTemperature());
@@ -159,12 +157,12 @@ public class ManagementController {
         log.debug("ProcessData: status={}, lastActive={}, lastInactive={}",
                 processData.getStatus(), processData.getActiveStateTimestamp(), processData.getInactiveStateTimestamp());
         status.setControllerStatus("active".equalsIgnoreCase(processData.getStatus()));
-        Calendar statusChangeDate = Calendar.getInstance();
+        long timestamp;
         if (status.isControllerStatus()) {
-            statusChangeDate.setTimeInMillis(processData.getActiveStateTimestamp());
+            timestamp = processData.getActiveStateTimestamp();
         } else {
-            statusChangeDate.setTimeInMillis(processData.getInactiveStateTimestamp());
+            timestamp = processData.getInactiveStateTimestamp();
         }
-        status.setLastStatusChangeTime(statusChangeDate);
+        status.setLastStatusChangeTime(Instant.ofEpochMilli(timestamp));
     }
 }

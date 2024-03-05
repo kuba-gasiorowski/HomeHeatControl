@@ -3,6 +3,7 @@ package com.sasieczno.homeheat.manager.security;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sasieczno.homeheat.manager.config.AppConfig;
 import com.sasieczno.homeheat.manager.repository.TokenRepository;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -30,6 +31,7 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class JWTAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
 
     public static final String AUTH_URI = "/api/auth";
@@ -37,17 +39,13 @@ public class JWTAuthenticationFilter extends UsernamePasswordAuthenticationFilte
     public static final String REFRESH_URI = AUTH_URI + "/refresh";
     public static final String LOGOUT_URI = AUTH_URI + "/logout";
 
-    @Autowired
-    private AppConfig appConfig;
+    private final AppConfig appConfig;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper;
 
-    @Autowired
-    private TokenRepository tokenRepository;
+    private final TokenRepository tokenRepository;
 
-    @Autowired
-    private TokenService tokenService;
+    private final TokenService tokenService;
 
     @PostConstruct
     public void init() {

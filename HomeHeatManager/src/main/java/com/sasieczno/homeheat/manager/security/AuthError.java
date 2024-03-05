@@ -12,5 +12,5 @@ import lombok.ToString;
 @AllArgsConstructor
 @ToString
 public class AuthError {
-    String error;
+    private String error;
 }

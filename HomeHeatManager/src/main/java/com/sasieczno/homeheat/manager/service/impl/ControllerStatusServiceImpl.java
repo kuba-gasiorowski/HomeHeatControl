@@ -4,10 +4,8 @@ import com.sasieczno.homeheat.manager.config.AppConfig;
 import com.sasieczno.homeheat.manager.model.HeatingData;
 import com.sasieczno.homeheat.manager.model.HeatingPeriod;
 import com.sasieczno.homeheat.manager.service.ControllerStatusService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
@@ -16,7 +14,7 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
-import java.util.Calendar;
+import java.time.Instant;
 import java.util.LinkedList;
 
 /**
@@ -49,12 +47,12 @@ import java.util.LinkedList;
  *     <li>CS (8 bytes): Circuit status: 0 (off), 1 (on)</li>
  * </ul>
  */
+@RequiredArgsConstructor
 @Slf4j
 @Service
 public class ControllerStatusServiceImpl implements ControllerStatusService {
 
-    @Autowired
-    AppConfig appConfig;
+    private final AppConfig appConfig;
 
     private HeatingData heatingData;
     private DatagramSocket managementUdpServer;
@@ -113,9 +111,7 @@ public class ControllerStatusServiceImpl implements ControllerStatusService {
         int offset = 0;
         if (length >= offset + ManagementMessageDecoder.MESSAGE_TIMESTAMP.getFieldLength()) {
             double timestamp = ManagementMessageDecoder.MESSAGE_TIMESTAMP.decodeValue(buf, offset);
-            Calendar lastMessageTime = Calendar.getInstance();
-            lastMessageTime.setTimeInMillis((long)(timestamp*1000));
-            heatStatus.setLastMessageTime(lastMessageTime);
+            heatStatus.setLastMessageTime(Instant.ofEpochMilli((long)(timestamp*1000)));
             offset += ManagementMessageDecoder.MESSAGE_TIMESTAMP.getFieldLength();
         } else {
             return null;

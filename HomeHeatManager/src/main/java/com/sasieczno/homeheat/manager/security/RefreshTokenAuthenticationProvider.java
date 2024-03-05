@@ -1,8 +1,8 @@
 package com.sasieczno.homeheat.manager.security;
 
 import com.sasieczno.homeheat.manager.repository.TokenRepository;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
@@ -12,13 +12,12 @@ import java.util.concurrent.atomic.AtomicLong;
 
 @Component
 @Slf4j
+@RequiredArgsConstructor
 public class RefreshTokenAuthenticationProvider implements AuthenticationProvider {
 
-    @Autowired
-    TokenRepository tokenRepository;
+    private final TokenRepository tokenRepository;
 
-    @Autowired
-    TokenService tokenService;
+    private final TokenService tokenService;
 
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {

@@ -1,6 +1,7 @@
 import unittest
 import atexit
 import yaml
+import datetime
 from unittest.mock import Mock, patch
 
 
@@ -8,6 +9,8 @@ GPIO = Mock()
 ads1115 = Mock()
 ads1x15 = Mock()
 board = Mock()
+busio = Mock()
+analog_in = Mock()
 
 orig_import = __import__
 
@@ -17,10 +20,14 @@ def mock_import(name, *args):
         return GPIO
     elif name == 'adafruit_ads1x15.ads1115':
         return ads1115
+    elif name == 'adafruit_ads1x15.analog_in':
+        return analog_in
     elif name == 'ads1x15':
         return ads1x15
     elif name == 'board':
         return board
+    elif name == 'busio':
+        return busio
     return orig_import(name, *args)
 
 
@@ -64,6 +71,20 @@ class TestHomeHeat(unittest.TestCase):
             cfg = yaml.load(cfg_file, Loader=yaml.FullLoader)
         self.assertEqual(HomeHeat.get_heating_period(0.5, 1, 20.0, 20.0, cfg['circuits'][2]), (5000.0, 25.0))
 
+    def test_get_heating_period_decrease_temp_1(self):
+        with open('test/HomeHeat1.yml', 'r') as cfg_file:
+            cfg = yaml.load(cfg_file, Loader=yaml.FullLoader)
+        self.assertEqual(HomeHeat.get_heating_period(0.5, 1, 20.0, 20.0, cfg['circuits'][0], HomeHeat.check_decrease(cfg, datetime.datetime(2024, 2, 11))), (3000.0, 23.0))
+
+    def test_get_heating_period_decrease_temp_2(self):
+        with open('test/HomeHeat1.yml', 'r') as cfg_file:
+            cfg = yaml.load(cfg_file, Loader=yaml.FullLoader)
+        self.assertEqual(HomeHeat.get_heating_period(0.5, 1, 20.0, 20.0, cfg['circuits'][0], HomeHeat.check_decrease(cfg, datetime.datetime(2024, 1, 21))), (4000.0, 24.0))
+
+    def test_get_heating_period_decrease_temp_outofperiod_no_adjust(self):
+        with open('test/HomeHeat1.yml', 'r') as cfg_file:
+            cfg = yaml.load(cfg_file, Loader=yaml.FullLoader)
+        self.assertEqual(HomeHeat.get_heating_period(0.5, 1, 20.0, 20.0, cfg['circuits'][0], HomeHeat.check_decrease(cfg, datetime.datetime(2024, 2, 18))), (5000.0, 25.0))
 
 if __name__ == '__main__':
     atexit.unregister(HomeHeat.cleanup)

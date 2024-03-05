@@ -3,6 +3,7 @@ package com.sasieczno.homeheat.manager.security;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.stereotype.Component;
@@ -23,6 +24,9 @@ public class RestAuthEntryPoint implements AuthenticationEntryPoint {
     public void commence(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, AuthenticationException e) throws IOException, ServletException {
         log.debug("Authentication error", e);
         AuthError authError = new AuthError(e.getMessage());
-        httpServletResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED, objectMapper.writeValueAsString(authError));
+        objectMapper.writeValue(httpServletResponse.getOutputStream(), objectMapper.writeValueAsString(authError));
+        httpServletResponse.setHeader(HttpHeaders.WWW_AUTHENTICATE, "Bearer Realm: \"HeatManager\"");
+        httpServletResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        httpServletResponse.flushBuffer();
     }
 }

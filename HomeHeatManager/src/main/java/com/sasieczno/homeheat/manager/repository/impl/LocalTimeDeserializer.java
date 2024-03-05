@@ -13,7 +13,7 @@ import java.util.regex.Pattern;
 
 public class LocalTimeDeserializer extends JsonDeserializer<LocalTime> {
 
-    Pattern timePattern = Pattern.compile("(\\d{1,2})(:(\\d{1,2})){0,1}(:(\\d{1,2})){0,1}");
+    private final Pattern timePattern = Pattern.compile("(\\d{1,2})(:(\\d{1,2})){0,1}(:(\\d{1,2})){0,1}");
 
     @Override
     public LocalTime deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
@@ -24,7 +24,7 @@ public class LocalTimeDeserializer extends JsonDeserializer<LocalTime> {
         int sec = 0;
         if (m.matches()) {
             try {
-                hour = Integer.valueOf(m.group(1));
+                hour = Integer.parseInt(m.group(1));
                 if (hour < 0 || hour > 23) {
                     throw new InvalidFormatException(jsonParser, "Invalid hour in time", text, LocalTime.class);
                 }
@@ -33,7 +33,7 @@ public class LocalTimeDeserializer extends JsonDeserializer<LocalTime> {
             }
             if (m.group(3) != null) {
                 try {
-                    minute = Integer.valueOf(m.group(3));
+                    minute = Integer.parseInt(m.group(3));
                     if (minute < 0 || minute > 59) {
                         throw new InvalidFormatException(jsonParser, "Invalid minute in time", text, LocalTime.class);
                     }
@@ -42,7 +42,7 @@ public class LocalTimeDeserializer extends JsonDeserializer<LocalTime> {
                 }
                 if (m.group(5) != null) {
                     try {
-                        sec = Integer.valueOf(m.group(5));
+                        sec = Integer.parseInt(m.group(5));
                         if (sec < 0 || sec > 59) {
                             throw new InvalidFormatException(jsonParser, "Invalid second in time", text, LocalTime.class);
                         }

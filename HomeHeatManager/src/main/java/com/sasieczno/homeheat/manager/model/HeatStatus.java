@@ -1,11 +1,12 @@
 package com.sasieczno.homeheat.manager.model;
 
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.Calendar;
+import java.time.Instant;
 import java.util.LinkedList;
 
 @NoArgsConstructor
@@ -13,12 +14,14 @@ import java.util.LinkedList;
 @Getter
 public class HeatStatus {
     private boolean controllerStatus;
-    private Calendar lastStatusChangeTime;
+    @JsonFormat(without = {JsonFormat.Feature.WRITE_DATE_TIMESTAMPS_AS_NANOSECONDS})
+    private Instant lastStatusChangeTime;
 
-    private Calendar lastMessageTime;
+    @JsonFormat(without = {JsonFormat.Feature.WRITE_DATE_TIMESTAMPS_AS_NANOSECONDS})
+    private Instant lastMessageTime;
     private HeatingPeriod heatingPeriod;
     private double externalTemperature;
     private double avgExternalTemperature;
 
-    LinkedList<CircuitStatus> circuitStatuses;
+    private LinkedList<CircuitStatus> circuitStatuses;
 }

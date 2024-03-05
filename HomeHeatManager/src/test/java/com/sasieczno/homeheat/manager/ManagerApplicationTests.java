@@ -35,6 +35,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
@@ -110,7 +111,8 @@ class ManagerApplicationTests {
 	@Test
 	@Order(3)
 	public void getStatusOkInactive() throws Exception {
-		final AtomicReference<HeatStatus> result = new AtomicReference<>();
+		final AtomicReference<HashMap<String, Object>> result = new AtomicReference<>();
+		final TypeReference<HashMap<String, Object>> typeRef = new TypeReference<>() {};
 
 		long hourAgo = System.currentTimeMillis() - 3600000L;
 		long now = System.currentTimeMillis();
@@ -127,16 +129,17 @@ class ManagerApplicationTests {
 				.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
 				.andDo(mvcResult -> {
 					String json = mvcResult.getResponse().getContentAsString();
-					result.set(convertJsonToObject(json, HeatStatus.class));
+					result.set(objectMapper.readValue(json, typeRef));
 				});
-		Assertions.assertEquals(now, result.get().getLastStatusChangeTime().getTimeInMillis());
-		Assertions.assertEquals(false, result.get().isControllerStatus());
+		Assertions.assertEquals(now, result.get().get("lastStatusChangeTime"));
+		Assertions.assertEquals(false, result.get().get("controllerStatus"));
 	}
 
 	@Test
 	@Order(3)
 	public void getStatusOkActive() throws Exception {
-		final AtomicReference<HeatStatus> result = new AtomicReference<>();
+		final AtomicReference<HashMap<String, Object>> result = new AtomicReference<>();
+		final TypeReference<HashMap<String, Object>> typeRef = new TypeReference<>() {};
 
 		long hourAgo = System.currentTimeMillis() - 3600000L;
 		long now = System.currentTimeMillis();
@@ -153,19 +156,20 @@ class ManagerApplicationTests {
 				.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
 				.andDo(mvcResult -> {
 					String json = mvcResult.getResponse().getContentAsString();
-					result.set(convertJsonToObject(json, HeatStatus.class));
+					result.set(objectMapper.readValue(json, typeRef));
 				});
-		Assertions.assertEquals(hourAgo, result.get().getLastStatusChangeTime().getTimeInMillis());
-		Assertions.assertTrue(result.get().isControllerStatus());
+		Assertions.assertEquals(hourAgo, result.get().get("lastStatusChangeTime"));
+		Assertions.assertTrue((Boolean) result.get().get("controllerStatus"));
 	}
 
 	@Test
 	@Order(4)
 	public void getStatusOkActiveData() throws Exception {
-		final AtomicReference<HeatStatus> result = new AtomicReference<>();
+		final AtomicReference<HashMap<String, Object>> result = new AtomicReference<>();
+		final TypeReference<HashMap<String, Object>> typeRef = new TypeReference<>() {};
 
 		long hourAgo = System.currentTimeMillis() - 3600000L;
-		double now = System.currentTimeMillis()/100;
+		double now = ((double) System.currentTimeMillis()) / 1000.0;
 		ControllerProcessData cpd = new ControllerProcessData();
 		cpd.setStatus("active");
 		cpd.setNRestarts(1);
@@ -183,13 +187,13 @@ class ManagerApplicationTests {
 				.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
 				.andDo(mvcResult -> {
 					String json = mvcResult.getResponse().getContentAsString();
-					result.set(convertJsonToObject(json, HeatStatus.class));
+					result.set(objectMapper.readValue(json, typeRef));
 				});
-		Assertions.assertEquals(hourAgo, result.get().getLastStatusChangeTime().getTimeInMillis());
-		Assertions.assertEquals(now, result.get().getLastMessageTime().getTimeInMillis()/1000);
-		Assertions.assertEquals(HeatingPeriod.NO_HEATING, result.get().getHeatingPeriod());
-		Assertions.assertEquals(-1.1, result.get().getExternalTemperature());
-		Assertions.assertEquals(2.5, result.get().getAvgExternalTemperature());
+		Assertions.assertEquals(hourAgo, result.get().get("lastStatusChangeTime"));
+		Assertions.assertEquals((long)(now*1000.0), result.get().get("lastMessageTime"));
+		Assertions.assertEquals(HeatingPeriod.NO_HEATING.name(), result.get().get("heatingPeriod"));
+		Assertions.assertEquals(-1.1, result.get().get("externalTemperature"));
+		Assertions.assertEquals(2.5, result.get().get("avgExternalTemperature"));
 	}
 
 	@Test

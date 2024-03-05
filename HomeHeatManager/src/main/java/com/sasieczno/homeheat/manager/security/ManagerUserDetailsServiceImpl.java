@@ -1,7 +1,7 @@
 package com.sasieczno.homeheat.manager.security;
 
 import com.sasieczno.homeheat.manager.config.AppConfig;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -11,10 +11,10 @@ import org.springframework.stereotype.Component;
 import java.util.Collection;
 
 @Component
+@RequiredArgsConstructor
 public class ManagerUserDetailsServiceImpl implements UserDetailsService {
 
-    @Autowired
-    AppConfig appConfig;
+    private final AppConfig appConfig;
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {

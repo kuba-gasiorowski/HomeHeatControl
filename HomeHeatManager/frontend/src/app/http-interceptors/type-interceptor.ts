@@ -24,14 +24,13 @@ export class TypeInterceptor implements HttpInterceptor {
     return false;
   }
 
-  isTimestampType(key: string): number {
+  isTimestampType(key: string): boolean {
     switch (key) {
       case 'lastStatusChangeTime':
-        return 0.001;
       case 'lastMessageTime':
-        return 1;
+        return true;
       default:
-        return 0;
+        return false;
     }
   }
 
@@ -54,9 +53,8 @@ export class TypeInterceptor implements HttpInterceptor {
     if (typeof body === 'object') {
       for (const key of Object.keys(body)) {
         const value = body[key];
-        const factor = this.isTimestampType(key);
-        if (factor > 0) {
-          body[key] = new Date(parseInt(value, 10) * factor);
+        if (this.isTimestampType(key)) {
+          body[key] = new Date(parseInt(value, 10));
         } else if (this.isTimeType(key)) {
           body[key] = new Time(value);
         } else if (typeof value === 'object') {

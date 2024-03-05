@@ -4,7 +4,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.Calendar;
+import java.time.Instant;
 import java.util.LinkedList;
 
 /**
@@ -15,7 +15,7 @@ import java.util.LinkedList;
 @Setter
 @NoArgsConstructor
 public class HeatingData {
-    Calendar lastMessageTime;
+    Instant lastMessageTime;
     HeatingPeriod heatingPeriod;
     double externalTemperature;
     double averageExternalTemperature;
