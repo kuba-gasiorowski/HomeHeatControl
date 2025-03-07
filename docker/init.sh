@@ -1,0 +1,1 @@
+docker build -t kubagasiorowski/homeheat-build:1.0 .
