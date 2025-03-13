@@ -1,4 +1,4 @@
-import { Injectable, OnDestroy, OnInit } from '@angular/core';
+import {Injectable, NgZone, OnDestroy, OnInit} from '@angular/core';
 import {
   HttpClient,
   HttpErrorResponse,
@@ -10,16 +10,11 @@ import {
   Observable,
   Subscription,
   Subject,
-  switchMap,
-  timer,
-  throwError,
-  catchError,
-  NEVER,
-  of,
-  interval,
-  tap,
+  tap, Observer,
 } from 'rxjs';
 import { environment } from 'src/environments/environment';
+import {EventSource} from "eventsource";
+  import {Utils} from "./utils";
 
 @Injectable({
   providedIn: 'root',
@@ -27,7 +22,7 @@ import { environment } from 'src/environments/environment';
 export class BackendApiService {
   apiUrl: string;
 
-  constructor(private http: HttpClient) {
+  constructor(private zone: NgZone, private http: HttpClient) {
     this.lastStatus = new HeatStatus();
     this.apiUrl = environment.apiUrl;
   }
@@ -41,13 +36,14 @@ export class BackendApiService {
   heatStatus: Subject<HeatStatus> = new Subject<HeatStatus>();
   subscription: Subscription = Subscription.EMPTY;
   lastStatus: HeatStatus;
+  statusEventSource: EventSource | undefined;
 
   getStatus(): Observable<HeatStatus> {
     return this.http
       .get<HeatStatus>(this.apiUrl + '/status')
       .pipe(map((res) => this.setStatusReady(res)))
-      .pipe(map((res) => (this.lastStatus = res)));
-    //return this.http.get<HeatStatus>("assets/status", this.httpOptions).pipe(map(res => this.setStatusReady(res)));
+      .pipe(map((res) => (this.lastStatus = res)))
+      .pipe(tap((res) => this.heatStatus.next(res)));
   }
 
   getConfig(): Observable<Config> {
@@ -99,23 +95,54 @@ export class BackendApiService {
     }
   }
 
+  private streamStatus(): Observable<HeatStatus> {
+    return new Observable((observer: Observer<HeatStatus>) => {
+      let source = new EventSource(this.apiUrl + '/streamStatus',
+        {
+          fetch: (input , init) => {
+            if (!init) {
+              throw new Error('No init object');
+            }
+            const ri = input as RequestInfo;
+            return fetch(ri, {
+              ...init,
+              headers: {
+                ...init.headers,
+                ...Utils.getAuthHeader()
+              },
+            });
+          }
+        }
+      );
+      this.statusEventSource = source;
+      this.statusEventSource.addEventListener('HeatStatus', (event) => {
+        this.zone.run(() => {
+          observer.next(this.setStatusReady(Utils.convert(JSON.parse(event.data))));
+        });
+      });
+
+    });
+
+  }
+
   onStart(): void {
-    this.subscription = timer(0, 60000)
-      .pipe(
-        switchMap(() =>
-          this.getStatus().pipe(
-            catchError((err) => {
-              this.handleError(err);
-              return NEVER;
-            })
-          )
-        )
-      )
-      .subscribe((result) => this.heatStatus.next(result));
+    this.stopStatusStream();
+    this.subscription = this.streamStatus().subscribe({
+      next: value => {
+        this.lastStatus = value;
+        this.heatStatus.next(value);},
+    });
   }
 
   onDestroy(): void {
-    this.subscription.unsubscribe();
+    this.stopStatusStream();
+    this.subscription?.unsubscribe();
     this.lastStatus = new HeatStatus();
+  }
+
+  public stopStatusStream(): void {
+    if (this.statusEventSource?.readyState !== EventSource.CLOSED) {
+      this.statusEventSource?.close();
+    }
   }
 }

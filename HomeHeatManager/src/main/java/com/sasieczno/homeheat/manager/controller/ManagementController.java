@@ -9,8 +9,10 @@ import com.sasieczno.homeheat.manager.model.HeatingData;
 import com.sasieczno.homeheat.manager.repository.ControllerConfigRepository;
 import com.sasieczno.homeheat.manager.repository.ControllerRepository;
 import com.sasieczno.homeheat.manager.service.ControllerStatusService;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.catalina.connector.ClientAbortException;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.http.HttpStatus;
@@ -22,9 +24,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.time.Instant;
 import java.util.LinkedList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * The controller of the manager REST interface implementation.
@@ -44,22 +49,60 @@ public class ManagementController {
     private final AppConfig appConfig;
 
 
-    @GetMapping(value = "status", produces = MediaType.APPLICATION_JSON_VALUE)
-    public HeatStatus getStatus() {
+    private HeatStatus getStatus(boolean wait) {
+        HeatingData heatingData;
+        if (wait) {
+            heatingData = controllerStatusService.waitForHeatingDataChange();
+        } else {
+            heatingData = controllerStatusService.getHeatStatus();
+        }
         HeatStatus heatStatus = new HeatStatus();
         ControllerConfig controllerConfig = controllerConfigRepository.getConfig();
-        HeatingData heatingData = controllerStatusService.getHeatStatus();
         transportData(controllerConfig, heatStatus);
         transportData(heatingData, heatStatus);
         transportData(controllerRepository.getControllerProcessData(), heatStatus);
         return heatStatus;
+
     }
 
+    @Operation(summary = "Get the current status of the heating system")
+    @GetMapping(value = "status", produces = MediaType.APPLICATION_JSON_VALUE)
+    public HeatStatus getStatus() {
+        return getStatus(false);
+    }
+
+    @Operation(summary = "Get status of the heating system in a streaming mode")
+    @GetMapping(value = "streamStatus", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter streamStatus() {
+        SseEmitter emitter = new SseEmitter(Long.MAX_VALUE);
+        ExecutorService ssExecutor = Executors.newSingleThreadExecutor();
+        ssExecutor.execute(() -> {
+            try {
+                int i = 0;
+                while (true) {
+                    HeatStatus heatStatus = getStatus(true);
+                    SseEmitter.SseEventBuilder event = SseEmitter.event()
+                            .id(String.valueOf(i++))
+                            .data(heatStatus)
+                            .name("HeatStatus");
+                    emitter.send(event);
+                }
+            } catch (ClientAbortException e) {
+                log.debug("Client disconnected", e);
+            } catch (Exception e) {
+                log.error("Error during SSE stream", e);
+            }
+        });
+        return emitter;
+    }
+
+    @Operation(summary = "Get the configuration of the heating system")
     @GetMapping(value = "config", produces = MediaType.APPLICATION_JSON_VALUE)
     public ControllerConfig getConfig() {
         return controllerConfigRepository.getConfig();
     }
 
+    @Operation(summary = "Update the configuration of the heating system")
     @PostMapping(value = "config", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ControllerConfig updateConfig(@RequestBody ControllerConfig config) {
         if (controllerConfigRepository.updateConfig(config)) {
@@ -69,6 +112,7 @@ public class ManagementController {
         }
     }
 
+    @Operation(summary = "Get the configuration of the particular circuit")
     @GetMapping(value = "config/circuit/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ControllerConfig.Circuit getCircuit(@PathVariable("id") Integer id) {
         for (ControllerConfig.Circuit circuit : controllerConfigRepository.getConfig().getCircuits()) {
@@ -78,6 +122,7 @@ public class ManagementController {
         throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Circuit does not exist in the config: " + id);
     }
 
+    @Operation(summary = "Update the configuration of the particular circuit")
     @PostMapping(value = "config/circuit/{id}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ControllerConfig.Circuit updateCircuit(@PathVariable("id") Integer id, @RequestBody ControllerConfig.Circuit circuit) {
         if (circuit.getIndex() != id) {

@@ -10,6 +10,7 @@ import { map, NEVER, Observable, shareReplay } from 'rxjs';
 import { BackendApiService } from '../shared/backend-api.service';
 import { Router } from '@angular/router';
 import { environment } from 'src/environments/environment';
+import {Utils} from "../shared/utils";
 
 @Injectable({
   providedIn: 'root',
@@ -27,7 +28,7 @@ export class AuthService {
   constructor(
     private http: HttpClient,
     private backendApiService: BackendApiService,
-    private router: Router
+    private router: Router,
   ) {
     this.authUrl = environment.authUrl;
   }
@@ -60,27 +61,20 @@ export class AuthService {
   }
 
   private saveAuthData(authData: AuthData): void {
-    window.sessionStorage.setItem('access_token', authData.token);
-    window.sessionStorage.setItem('refresh_token', authData.refreshToken);
-    window.sessionStorage.setItem(
-      'refresh_token_expiry',
-      authData.expiryDate.toString(10)
-    );
+    Utils.storeAuthData(authData);
     this.isLogged = true;
     this.backendApiService.onStart();
   }
 
   removeAuthData(): void {
-    window.sessionStorage.removeItem('access_token');
-    window.sessionStorage.removeItem('refresh_token');
-    window.sessionStorage.removeItem('refresh_token_expiry');
+    Utils.removeAuthData();
     this.isLogged = false;
     this.backendApiService.onDestroy();
     this.router.navigate(['login'], { skipLocationChange: true });
   }
 
   refreshToken(): Observable<any> {
-    const refreshToken = window.sessionStorage.getItem('refresh_token');
+    const refreshToken = Utils.getRefreshToken();
     if (refreshToken) {
       return this.http
         .post<AuthData>(this.authUrl + '/refresh', refreshToken)

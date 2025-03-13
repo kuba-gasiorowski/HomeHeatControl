@@ -34,6 +34,13 @@ export class DashboardComponent implements OnInit {
   ngOnInit(): void {
     if (!this.backendApiService.lastStatus.ready) {
       this.loadingService.invokeLoading(true);
+      this.backendApiService.getStatus().subscribe(next => {
+        this.copyData(next);
+        if (this.loading) {
+          this.loadingService.invokeLoading(false);
+          this.loading = false;
+        }
+      });
     }
     this.copyData(this.backendApiService.lastStatus);
     this.backendApiService.heatStatus.subscribe((result) => {

@@ -8,6 +8,7 @@ import {
 import { Injectable } from '@angular/core';
 import { map, Observable } from 'rxjs';
 import { Time } from '../models/api/heat-status';
+import {Utils} from "../shared/utils";
 
 @Injectable()
 export class TypeInterceptor implements HttpInterceptor {
@@ -24,46 +25,6 @@ export class TypeInterceptor implements HttpInterceptor {
     return false;
   }
 
-  isTimestampType(key: string): boolean {
-    switch (key) {
-      case 'lastStatusChangeTime':
-      case 'lastMessageTime':
-        return true;
-      default:
-        return false;
-    }
-  }
-
-  isTimeType(key: string): boolean {
-    switch (key) {
-      case 'nightStartTime':
-      case 'nightEndTime':
-      case 'dayStartTime':
-      case 'dayEndTime':
-        return true;
-      default:
-        return false;
-    }
-  }
-
-  convert(body: any) {
-    if (body == null || body == undefined) {
-      return body;
-    }
-    if (typeof body === 'object') {
-      for (const key of Object.keys(body)) {
-        const value = body[key];
-        if (this.isTimestampType(key)) {
-          body[key] = new Date(parseInt(value, 10));
-        } else if (this.isTimeType(key)) {
-          body[key] = new Time(value);
-        } else if (typeof value === 'object') {
-          this.convert(value);
-        }
-      }
-    }
-    return body;
-  }
 
   intercept(
     req: HttpRequest<any>,
@@ -74,7 +35,7 @@ export class TypeInterceptor implements HttpInterceptor {
         if (val instanceof HttpResponse) {
           val = val.clone();
           const body = val.body;
-          this.convert(body);
+          Utils.convert(body);
         }
         return val;
       })

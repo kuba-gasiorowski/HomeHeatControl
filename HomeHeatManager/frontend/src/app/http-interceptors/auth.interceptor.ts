@@ -19,11 +19,10 @@ import {
   NEVER,
 } from 'rxjs';
 import { AuthService } from '../auth/auth.service';
+import {Utils} from "../shared/utils";
 
 @Injectable()
 export class AuthInterceptor implements HttpInterceptor {
-  static AUTH_HEADER = 'Authorization';
-  static JWT_PREFIX = 'Bearer ';
 
   private isRefreshing: boolean = false;
   private tokenRefreshSubject: Subject<any> = new Subject<any>();
@@ -59,14 +58,17 @@ export class AuthInterceptor implements HttpInterceptor {
    */
   addAuthHeader(request: HttpRequest<any>): HttpRequest<any> {
     if (this.authService.isLogged) {
-      let token = sessionStorage.getItem('access_token');
-      if (token)
+      const authHeader = Utils.getAuthHeader();
+      if (authHeader !== null) {
+        const authHeaderObj = Object.entries(authHeader);
+        let headers = request.headers;
+        for (let header of authHeaderObj) {
+          headers = headers.set(...header);
+        }
         return request.clone({
-          headers: request.headers.set(
-            AuthInterceptor.AUTH_HEADER,
-            AuthInterceptor.JWT_PREFIX + token
-          ),
+          headers: headers,
         });
+      }
     }
     return request;
   }

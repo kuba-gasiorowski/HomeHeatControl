@@ -90,13 +90,28 @@ public class ControllerStatusServiceImpl implements ControllerStatusService {
         return heatingData;
     }
 
+    @Override
+    public HeatingData waitForHeatingDataChange() {
+        try {
+            synchronized (this) {
+                wait();
+            }
+        } catch (InterruptedException e) {
+            log.warn("Interrupted while waiting for heating data change", e);
+        }
+        return heatingData;
+    }
+
     private void processManagementMessage() {
         while (running) {
             DatagramPacket packet = new DatagramPacket(buf, buf.length);
             try {
                 managementUdpServer.receive(packet);
                 log.debug("Received packet from: {}", packet.getAddress().getCanonicalHostName());
-                heatingData = decodeManagementMessage(packet.getLength());
+                synchronized (this) {
+                    heatingData = decodeManagementMessage(packet.getLength());
+                    notifyAll();
+                }
             } catch (SocketTimeoutException e) {
                 log.info("Timeout on Management UDP Socket");
             } catch (Exception e) {
