@@ -2,150 +2,165 @@ extMinTemp: -18.0
 extMaxTemp: 12.0
 extStartThreshold: 0.15
 tempBaseLevel: 20.0
-nightStartTime: 22
-nightEndTime: 6:58
+nightStartTime: 22:00:00
+nightEndTime: 06:58:00
 dayStartTime: 13:00:00
 dayEndTime: 15:58:00
 offHome:
-  - decreaseTemp: 2.0
-    decreaseFrom: 2024-02-03 11:13:15
+  - decreaseFrom: 2024-02-03 11:13:15
     decreaseTo: 2024-02-08 17:18:31
-  - decreaseTemp: 8.0
-    decreaseFrom: 2024-08-30 19:55:57
+    decreaseTemp: 2.0
+  - decreaseFrom: 2024-08-30 19:55:57
     decreaseTo: 2024-09-07 21:58:00
+    decreaseTemp: 8.0
 logConfig: config/HomeHeat_logging.yml
 logLevel: DEBUG
 managementServer: 127.0.0.1:20001
-
 circuits:
   - index: 0
     description: kitchen
     active: DAY
     maxTemp: 35.0
     tempBaseLevel: 20.0
+    nightAdjust: null
+    dayAdjust: null
     heatCharacteristics:
       - tempMax: 20.0
-        heatFactor: 1.0384e-3
+        heatFactor: 0.0010384
       - tempMax: 23.0
-        heatFactor: 1.0384e-3
+        heatFactor: 0.0010384
       - tempMax: 26.0
-        heatFactor: 1.0384e-3
+        heatFactor: 0.0010384
       - tempMax: 30.0
-        heatFactor: 1.0384e-3
+        heatFactor: 0.0010384
       - tempMax: 100.0
-        heatFactor: 1.0384e-3
+        heatFactor: 0.0010384
   - index: 1
     description: living room
     active: NIGHT
     maxTemp: 30.0
     tempBaseLevel: 20.0
+    nightAdjust: null
+    dayAdjust: null
     heatCharacteristics:
       - tempMax: 20.0
-        heatFactor: 7.1031e-4
+        heatFactor: 0.00071031
       - tempMax: 23.0
-        heatFactor: 7.1031e-4
+        heatFactor: 0.00071031
       - tempMax: 26.0
-        heatFactor: 7.1031e-4
+        heatFactor: 0.00071031
       - tempMax: 30.0
-        heatFactor: 7.1031e-4
+        heatFactor: 0.00071031
       - tempMax: 100.0
-        heatFactor: 7.1031e-4
+        heatFactor: 0.00071031
   - index: 2
     description: boys' room 1
     active: ALL
     maxTemp: 30.0
     tempBaseLevel: 20.0
+    nightAdjust: null
+    dayAdjust: null
     heatCharacteristics:
       - tempMax: 20.0
-        heatFactor: 8.3333e-4
+        heatFactor: 0.00083333
       - tempMax: 23.0
-        heatFactor: 8.3333e-4
+        heatFactor: 0.00083333
       - tempMax: 26.0
-        heatFactor: 8.3333e-4
+        heatFactor: 0.00083333
       - tempMax: 30.0
-        heatFactor: 8.3333e-4
+        heatFactor: 0.00083333
       - tempMax: 100.0
-        heatFactor: 8.3333e-4
+        heatFactor: 0.00083333
   - index: 3
     description: boys' room 2
     active: ALL
     maxTemp: 30.0
     tempBaseLevel: 20.0
+    nightAdjust: null
+    dayAdjust: null
     heatCharacteristics:
       - tempMax: 20.0
-        heatFactor: 8.3333e-4
+        heatFactor: 0.00083333
       - tempMax: 23.0
-        heatFactor: 8.3333e-4
+        heatFactor: 0.00083333
       - tempMax: 26.0
-        heatFactor: 8.3333e-4
+        heatFactor: 0.00083333
       - tempMax: 30.0
-        heatFactor: 8.3333e-4
+        heatFactor: 0.00083333
       - tempMax: 100.0
-        heatFactor: 8.3333e-4
+        heatFactor: 0.00083333
   - index: 4
     description: hall
     active: ALL
     maxTemp: 30.0
     tempBaseLevel: 20.0
+    nightAdjust: null
+    dayAdjust: null
     heatCharacteristics:
       - tempMax: 20.0
-        heatFactor: 8.3333e-4
+        heatFactor: 0.00083333
       - tempMax: 23.0
-        heatFactor: 8.3333e-4
+        heatFactor: 0.00083333
       - tempMax: 26.0
-        heatFactor: 8.3333e-4
+        heatFactor: 0.00083333
       - tempMax: 30.0
-        heatFactor: 8.3333e-4
+        heatFactor: 0.00083333
       - tempMax: 100.0
-        heatFactor: 8.3333e-4
+        heatFactor: 0.00083333
   - index: 5
     description: office room
     active: ALL
     maxTemp: 30.0
     tempBaseLevel: 20.0
+    nightAdjust: null
+    dayAdjust: null
     heatCharacteristics:
       - tempMax: 20.0
-        heatFactor: 6.5e-4
+        heatFactor: 0.00065
       - tempMax: 23.0
-        heatFactor: 6.5e-4
+        heatFactor: 0.00065
       - tempMax: 26.0
-        heatFactor: 6.5e-4
+        heatFactor: 0.00065
       - tempMax: 30.0
-        heatFactor: 6.5e-4
+        heatFactor: 0.00065
       - tempMax: 100.0
-        heatFactor: 6.5e-4
+        heatFactor: 0.00065
   - index: 6
     description: our bedroom
     active: ALL
     maxTemp: 30.0
     tempBaseLevel: 20.0
+    nightAdjust: null
+    dayAdjust: null
     heatCharacteristics:
       - tempMax: 20.0
-        heatFactor: 8.3333e-4
+        heatFactor: 0.00083333
       - tempMax: 23.0
-        heatFactor: 8.3333e-4
+        heatFactor: 0.00083333
       - tempMax: 26.0
-        heatFactor: 8.3333e-4
+        heatFactor: 0.00083333
       - tempMax: 30.0
-        heatFactor: 8.3333e-4
+        heatFactor: 0.00083333
       - tempMax: 100.0
-        heatFactor: 8.3333e-4
+        heatFactor: 0.00083333
   - index: 7
     description: our bathroom
     active: ALL
     maxTemp: 40.0
     tempBaseLevel: 20.0
+    nightAdjust: null
+    dayAdjust: null
     heatCharacteristics:
       - tempMax: 20.0
-        heatFactor: 9.0074e-4
+        heatFactor: 0.00090074
       - tempMax: 23.0
-        heatFactor: 9.0074e-4
+        heatFactor: 0.00090074
       - tempMax: 26.0
-        heatFactor: 9.0074e-4
+        heatFactor: 0.00090074
       - tempMax: 30.0
-        heatFactor: 9.0074e-4
+        heatFactor: 0.00090074
       - tempMax: 100.0
-        heatFactor: 9.0074e-4
+        heatFactor: 0.00090074
   - index: 8
     description: bathroom
     active: OFF
@@ -155,28 +170,30 @@ circuits:
     dayAdjust: 0.15
     heatCharacteristics:
       - tempMax: 20.0
-        heatFactor: 1.0102e-3
+        heatFactor: 0.0010102
       - tempMax: 23.0
-        heatFactor: 1.0102e-3
+        heatFactor: 0.0010102
       - tempMax: 26.0
-        heatFactor: 1.0102e-3
+        heatFactor: 0.0010102
       - tempMax: 30.0
-        heatFactor: 1.0102e-3
+        heatFactor: 0.0010102
       - tempMax: 100.0
-        heatFactor: 1.0102e-3
+        heatFactor: 0.0010102
   - index: 9
     description: technical room
     active: ALL
     maxTemp: 35.0
     tempBaseLevel: 20.0
+    nightAdjust: null
+    dayAdjust: null
     heatCharacteristics:
       - tempMax: 20.0
-        heatFactor: 8.3333e-4
+        heatFactor: 0.00083333
       - tempMax: 23.0
-        heatFactor: 8.3333e-4
+        heatFactor: 0.00083333
       - tempMax: 26.0
-        heatFactor: 8.3333e-4
+        heatFactor: 0.00083333
       - tempMax: 30.0
-        heatFactor: 8.3333e-4
+        heatFactor: 0.00083333
       - tempMax: 100.0
-        heatFactor: 8.3333e-4
+        heatFactor: 0.00083333

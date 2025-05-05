@@ -40,7 +40,7 @@ export class InputTimeDirective implements ControlValueAccessor, Validator {
   constructor(private renderer: Renderer2, private elementRef: ElementRef) {}
 
   writeValue(obj: Time | null): void {
-    const time = obj || new Time([]);
+    const time = obj || new Time("");
     this.renderer.setProperty(
       this.elementRef.nativeElement,
       'value',
@@ -50,10 +50,7 @@ export class InputTimeDirective implements ControlValueAccessor, Validator {
 
   registerOnChange(fn: any): void {
     this.onChange = (value: string) => {
-      let timeValue = value.split(':').map((item) => {
-        return parseInt(item, 10);
-      });
-      fn(new Time(timeValue));
+      fn(new Time(value));
     };
   }
 

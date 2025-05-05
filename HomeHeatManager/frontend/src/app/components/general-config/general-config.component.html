@@ -1,4 +1,4 @@
-<div class="alert alert-secondary" role="alert">
+<div class="alert alert-secondary" role="alert" xmlns="http://www.w3.org/1999/html">
   For detailed description of how the heating works, visit:
   <a
     href="https://github.com/kuba-gasiorowski/HomeHeatControl/blob/main/README.md#software-part"
@@ -158,7 +158,7 @@
     <div
       class="col auto form-text alert alert-danger"
       role="alert"
-      id="extMinTempError"
+      id="extStartThresholdError"
       *ngIf="isInvalid(configFormGroup.controls['extStartThreshold'])"
     >
       Invalid value, must be proper percent value.
@@ -404,6 +404,99 @@
     </div>
   </div>
 
+  <div class="col-6 col-md-6 pb-3" id="offHomeItems" formArrayName="offHome">
+    <ng-template #offHomePopup
+    ><div id="offHomePopup">
+      The periods to temporarily lower the heating (e.g. when being on holiday).
+    </div></ng-template
+    >
+    <label
+      class="form-label"
+      [ngbPopover]="offHomePopup"
+      placement="right"
+      triggers="mouseenter:mouseleave"
+    ><b>Off home periods</b></label
+    >
+    <table class="table w-auto table-responsive">
+      <thead>
+        <th scope="col"><span>Start date</span></th>
+        <th scope="col"><span>End date</span></th>
+        <th scope="col"><span>Decrease</span></th>
+        <th scope="col"><span></span></th>
+      </thead>
+      <tbody>
+        <tr
+          *ngFor="
+            let offHomePeriod of getOffHomeFormArray().controls;
+            let indexOfElement = index
+          "
+          [formGroupName]="indexOfElement"
+          id="offHome{{ indexOfElement }}">
+
+          <td>
+            <input type="text"
+                   id="offHomeStart{{ indexOfElement }}"
+                   appInputDateTime
+                   formControlName="decreaseFrom"
+                   placeholder="yyyy-MM-dd HH:mm"
+                   class="form-control"
+                   [ngClass]="{
+                     'is-valid':
+                     offHomePeriod.get('decreaseFrom')?.touched &&
+                     offHomePeriod.get('decreaseFrom')?.valid,
+                    'is-invalid':
+                     offHomePeriod.get('decreaseFrom')?.touched &&
+                     offHomePeriod.get('decreaseFrom')?.invalid
+                   }"
+            />
+          </td>
+          <td>
+            <input type="text"
+                   id="offHomeEnd{{ indexOfElement }}"
+                   appInputDateTime
+                   formControlName="decreaseTo"
+                   placeholder="yyyy-MM-dd HH:mm"
+                   class="form-control"
+                   [ngClass]="{
+                    'is-valid':
+                    offHomePeriod.get('decreaseTo')?.touched &&
+                    offHomePeriod.get('decreaseTo')?.valid,
+                   'is-invalid':
+                    offHomePeriod.get('decreaseTo')?.touched &&
+                    offHomePeriod.get('decreaseTo')?.invalid
+                    }"
+                   />
+          </td>
+          <td>
+            <input type="number"
+                   id="offHomeTemp{{ indexOfElement }}"
+                   formControlName="decreaseTemp"
+                   class="form-control"
+                   [ngClass]="{
+                     'is-valid':
+                     offHomePeriod.get('decreaseTemp')?.touched &&
+                     offHomePeriod.get('decreaseTemp')?.valid,
+                    'is-invalid':
+                     offHomePeriod.get('decreaseTemp')?.touched &&
+                     offHomePeriod.get('decreaseTemp')?.invalid
+                   }"
+            />
+          </td>
+          <td>
+            <button type="button" class="btn btn-primary" (click)="removeOffHomeForm(indexOfElement)">
+              Remove
+            </button>
+          </td>
+      </tr>
+      </tbody>
+    </table>
+    <div class="col-6 col-md-3">
+      <button type="button" class="btn btn-primary" (click)="addOffHomeForm()">
+        Add period
+      </button>
+    </div>
+  </div>
+
   <div class="accordion" id="circuitItems" formArrayName="circuits">
     <div
       class="accordion-item"
@@ -498,7 +591,7 @@
                         autocomplete="off" value="ALL" formControlName="active"
                         attr.aria-described-by="circuitActiveHelp{{ indexOfElement }}">
                 <label class="btn btn-outline-primary" for="circuitStateAll{{ indexOfElement }}">ALL</label>
-              
+
                 <!--input
                   class="form-check-input"
                   type="checkbox"

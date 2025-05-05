@@ -35,6 +35,7 @@ export class GeneralConfigComponent implements OnInit {
         nightEndTime: [''],
         dayStartTime: [''],
         dayEndTime: [''],
+        offHome: this.fb.array([]),
         circuits: this.fb.array([]),
       },
       {
@@ -48,6 +49,27 @@ export class GeneralConfigComponent implements OnInit {
   isActionExecuted = false;
   opType = OperationType.LOAD;
   opError: string = '';
+
+  getOffHomeFormArray(): FormArray {
+    return this.configFormGroup.get('offHome') as FormArray;
+  }
+
+  addOffHomeForm(): FormGroup {
+    let offHomeForm = this.fb.group(
+      {
+        decreaseFrom: [''],
+        decreaseTo: [''],
+        decreaseTemp: ['', [Validators.min(0), Validators.max(10)]],
+      }
+    );
+    this.getOffHomeFormArray().push(offHomeForm);
+    return offHomeForm;
+  }
+
+  removeOffHomeForm(index: number): void {
+    this.getOffHomeFormArray().removeAt(index);
+    this.configFormGroup.markAsTouched();
+  }
 
   getCircuitsFormArray(): FormArray {
     return this.configFormGroup.get('circuits') as FormArray;
@@ -95,6 +117,7 @@ export class GeneralConfigComponent implements OnInit {
   fillForm(config: Config): void {
     this.configFormGroup.reset();
     this.getCircuitsFormArray().clear();
+    this.getOffHomeFormArray().clear();
     this.isActionExecuted = false;
     if (config.circuits) {
       for (let i = 0; i < config.circuits.length; i++) {
@@ -111,6 +134,16 @@ export class GeneralConfigComponent implements OnInit {
         circuitForm.addValidators([this.circuitTempValidator]);
       }
     }
+    if (config.offHome) {
+      for (let i = 0; i < config.offHome.length; i++) {
+        let offHomeElementForm = this.addOffHomeForm();
+        offHomeElementForm.patchValue({
+          decreaseFrom: config.offHome[i].decreaseFrom,
+          decreaseTo: config.offHome[i].decreaseTo,
+          decreaseTemp: config.offHome[i].decreaseTemp,
+        });
+      }
+    }
     this.configFormGroup.patchValue({
       extMaxTemp: config.extMaxTemp,
       extMinTemp: config.extMinTemp,
@@ -121,6 +154,11 @@ export class GeneralConfigComponent implements OnInit {
       dayStartTime: config.dayStartTime,
       dayEndTime: config.dayEndTime,
     });
+  }
+
+
+  addOffHomePeriod(): void {
+
   }
 
   confirmSave(): void {

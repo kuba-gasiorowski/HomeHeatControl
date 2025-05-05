@@ -54,7 +54,17 @@ class MeasurementException(Exception):
     pass
 
 
-def get_temperature(sensor_input, sensor_map_tab):
+def open_config_file(config_file_path):
+    """
+    Opens the configuration file and returns the configuration object
+    :param config_file_path: The path to the configuration file
+    :return: The configuration object
+    """
+    with open(config_file_path, 'r') as cfg_file:
+        return yaml.load(cfg_file, Loader=yaml.BaseLoader)
+
+
+def get_temperature(sensor_input, sensor_map_tab, sleep_time=2):
     """
     Gets the temperature reported by the sensor. Using
     Steinhart-Hart equation to convert the resistance of the
@@ -66,7 +76,7 @@ def get_temperature(sensor_input, sensor_map_tab):
     """
     sensor_obj = sensor_map_tab[sensor_input]
     GPIO.output(sensor_obj[1], GPIO.HIGH)
-    time.sleep(2)
+    time.sleep(sleep_time)
     try:
         v0_0 = sensor_obj[0].voltage
         v0_1 = sensor_obj[0].voltage
@@ -126,9 +136,9 @@ def get_heating_period(heat_level, day_period, current_temp, base_level, circuit
     :param decrease_temp: The base/top temperatures values to be decreased by that value (default 0.0)
     :return: Heating length in seconds to reach desired temperature, desired temperature
     """
-    max_temp = circuit_data['maxTemp'] - decrease_temp
+    max_temp = float(circuit_data['maxTemp']) - decrease_temp
     try:
-        base_level = circuit_data['tempBaseLevel']
+        base_level = float(circuit_data['tempBaseLevel'])
     except KeyError:
         pass
     base_level = base_level - decrease_temp
@@ -155,39 +165,20 @@ def get_heating_period(heat_level, day_period, current_temp, base_level, circuit
     while n >= 0:
         elem_a = heat_characteristics[n]
         elem_b = heat_characteristics[n + 1]
-        temp_max_a = elem_a['tempMax']
-        temp_max_b = elem_b['tempMax']
-        heat_factor = elem_b['heatFactor']
+        temp_max_a = float(elem_a['tempMax'])
+        temp_max_b = float(elem_b['tempMax'])
+        heat_factor = float(elem_b['heatFactor'])
         if desired_temp >= temp_max_a and current_temp < temp_max_b:
             tb = min(desired_temp, temp_max_b)
             ta = max(current_temp, temp_max_a)
             heat_period += (tb - ta) / heat_factor
         n -= 1
-    temp_max_b = heat_characteristics[0]['tempMax']
+    temp_max_b = float(heat_characteristics[0]['tempMax'])
     tb = min(desired_temp, temp_max_b)
-    heat_factor = heat_characteristics[0]['heatFactor']
-    if current_temp < heat_characteristics[0]['tempMax']:
+    heat_factor = float(heat_characteristics[0]['heatFactor'])
+    if current_temp < float(heat_characteristics[0]['tempMax']):
         heat_period += (tb - current_temp) / heat_factor
     return heat_period, desired_temp
-
-
-def parse_time(time_str):
-    """
-    Parses the time from HH:mm:ss format to time object
-    :param time_str: the time string in HH:mm:ss format (seconds and minutes can be omitted)
-    :return: The parsed time object
-    """
-    p = time_str.split(':')
-    hour = int(p[0])
-    if len(p) > 1:
-        min = int(p[1])
-    else:
-        min = 0
-    if len(p) > 2:
-        sec = int(p[2])
-    else:
-        sec = 0
-    return datetime.time(hour, min, sec)
 
 
 def get_seconds(ts):
@@ -208,18 +199,20 @@ def get_day_period(current_timestamp, config):
         time to end of current period (if other than 0)
         length in second of the period (if other than 0)
     """
-    night_start_time = config['nightStartTime']
-    night_end_time = config['nightEndTime']
-    day_start_time = config['dayStartTime']
-    day_end_time = config['dayEndTime']
-    current_time = get_seconds(current_timestamp.time())
+    night_start_time = convert_time(config['nightStartTime'])
+    night_end_time = convert_time(config['nightEndTime'])
+    day_start_time = convert_time(config['dayStartTime'])
+    day_end_time = convert_time(config['dayEndTime'])
+    current_time = current_timestamp.time()
 
-    if current_time > night_start_time:
-        return 1, DAY_SECONDS - current_time + night_end_time, night_end_time + DAY_SECONDS - night_start_time
+    if night_end_time < night_start_time < current_time:
+        return 1, DAY_SECONDS - get_seconds(current_time) + get_seconds(night_end_time), get_seconds(night_end_time) + DAY_SECONDS - get_seconds(night_start_time)
+    if night_start_time < current_time < night_end_time:
+        return 1, get_seconds(night_end_time) - get_seconds(current_time), get_seconds(night_end_time) - get_seconds(night_start_time)
     if current_time < night_end_time:
-        return 1, night_end_time - current_time, night_end_time + DAY_SECONDS - night_start_time
+        return 1, get_seconds(night_end_time) - get_seconds(current_time), get_seconds(night_end_time) + DAY_SECONDS - get_seconds(night_start_time)
     if day_start_time < current_time < day_end_time:
-        return 2, day_end_time - current_time, day_end_time - day_start_time
+        return 2, get_seconds(day_end_time) - get_seconds(current_time), get_seconds(day_end_time) - get_seconds(day_start_time)
     else:
         return 0, 0, 0
 
@@ -258,6 +251,38 @@ def initialize_ads(ads_id, i2c_object, ads_list, sensor_setup_list, sensor_map_l
         logger.error("Could not initialize ADS",  ads_id, " address ", (0x48 + ads_id), exc_info=True)
 
 
+def convert_date(date_str):
+    """
+    Converts the date string to date object
+    :param date_str:
+    :return:
+    """
+    formats = ["%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M", "%Y-%m-%d %H", "%Y-%m-%d"]
+    exc = None
+    for format in formats:
+        try:
+            return datetime.datetime.strptime(date_str, format)
+        except ValueError as e:
+            exc = e
+    raise exc
+
+def convert_time(time_str):
+    """
+    Converts the time string to time object
+    :param time_str:
+    :return:
+    """
+    formats = ["%H:%M:%S", "%H:%M", "%H"]
+    exc = None
+    for format in formats:
+        try:
+            time_obj = datetime.datetime.strptime(time_str, format)
+            return time_obj.time()
+        except ValueError as e:
+            exc = e
+    raise exc
+
+
 def check_decrease(cfg, timestamp):
     """
     Returns the value to decrease base/max temperatures levels for the circuits to
@@ -272,13 +297,13 @@ def check_decrease(cfg, timestamp):
     decrease_temp = 0.0
     off_home = cfg.get("offHome", [])
     for decrease_rec in off_home:
-        decrease_temp = decrease_rec.get("decreaseTemp")
+        decrease_temp = float(decrease_rec.get("decreaseTemp"))
         if decrease_temp is None:
             continue
-        decrease_from = decrease_rec.get("decreaseFrom")
+        decrease_from = convert_date(decrease_rec.get("decreaseFrom"))
         if decrease_from is None or decrease_from >= timestamp:
             continue
-        decrease_to = decrease_rec.get("decreaseTo")
+        decrease_to = convert_date(decrease_rec.get("decreaseTo"))
         if decrease_to is None or decrease_to < timestamp:
             continue
         return decrease_temp
@@ -310,8 +335,7 @@ def main():
     parser.add_argument('--version', action='version', version='%(prog)s ' + VERSION)
     cmd_args = parser.parse_args()
 
-    with open(cmd_args.config, 'r') as cfg_file:
-        cfg = yaml.load(cfg_file, Loader=yaml.FullLoader)
+    cfg = open_config_file(cmd_args.config)
 
     with open(cfg.get('logConfig', 'config/HomeHeat_logging.yml'), 'r') as f:
         logging_config = yaml.load(f, Loader=yaml.FullLoader)
@@ -374,8 +398,7 @@ def main():
     while True:
         curr_timestamp = datetime.datetime.now()
         management_data = struct.pack('!d', curr_timestamp.timestamp())
-        with open(cmd_args.config, 'r') as cfg_file:
-            cfg = yaml.load(cfg_file, Loader=yaml.FullLoader)
+        cfg = open_config_file(cmd_args.config)
         if 'logLevel' in cfg:
             logger.setLevel(cfg.get('logLevel'))
         day_period, time_to_end, period_length = get_day_period(curr_timestamp, cfg)
@@ -418,8 +441,8 @@ def main():
                         ext_temp_file.write('%f\n' % i)
             except IOError:
                 logger.warning("Could not re-write external temperature history to file", exc_info=True)
-            heating_level = get_ext_temperature_level(ext_temp_avg, cfg['extMaxTemp'], cfg['extMinTemp'],
-                                                      cfg['extStartThreshold'])
+            heating_level = get_ext_temperature_level(ext_temp_avg, float(cfg['extMaxTemp']), float(cfg['extMinTemp']),
+                                                      float(cfg['extStartThreshold']))
             logger.debug("Avg external temperature: %f, level: %f", ext_temp_avg, heating_level)
             if day_period == 0:
                 logger.debug("Outside of heating period")
@@ -467,7 +490,7 @@ def main():
                     logger.info(log_str, index)
                     continue
                 heating_period, desired_temp = \
-                    get_heating_period(heating_level, day_period, temp, cfg['tempBaseLevel'], cfg['circuits'][index], check_decrease(cfg, curr_timestamp))
+                    get_heating_period(heating_level, day_period, temp, float(cfg['tempBaseLevel']), int(cfg['circuits'][index]), check_decrease(cfg, curr_timestamp))
                 if heating_period <= 0 and circuits[index][1] != GPIO.LOW:
                     circuits[index][1] = GPIO.LOW
                     GPIO.output(circuits[index][0], GPIO.LOW)

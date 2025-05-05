@@ -1,9 +1,11 @@
 package com.sasieczno.homeheat.manager.model;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 
@@ -15,10 +17,15 @@ public class ControllerConfig {
     Double extMaxTemp;
     Double extStartThreshold;
     Double tempBaseLevel;
+    @JsonFormat(pattern = "HH:mm:ss")
     LocalTime nightStartTime;
+    @JsonFormat(pattern = "HH:mm:ss")
     LocalTime nightEndTime;
+    @JsonFormat(pattern = "HH:mm:ss")
     LocalTime dayStartTime;
+    @JsonFormat(pattern = "HH:mm:ss")
     LocalTime dayEndTime;
+    ArrayList<OffHomeElement> offHome;
     String logConfig;
     String logLevel;
     String managementServer;
@@ -41,6 +48,10 @@ public class ControllerConfig {
             dayStartTime = cfg.getDayStartTime();
         if (cfg.getDayEndTime() != null)
             dayEndTime = cfg.getDayEndTime();
+        if (cfg.getOffHome() != null) {
+            offHome = new ArrayList<>();
+            offHome.addAll(cfg.getOffHome());
+        }
         if (cfg.getLogConfig() != null)
             logConfig = cfg.getLogConfig();
         if (cfg.getLogLevel() != null)
@@ -54,6 +65,26 @@ public class ControllerConfig {
                         dstCircuit.copy(circuit);
                 }
             }
+        }
+    }
+
+    @NoArgsConstructor
+    @Getter
+    @Setter
+    public static class OffHomeElement {
+        @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+        LocalDateTime decreaseFrom;
+        @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+        LocalDateTime decreaseTo;
+        Double decreaseTemp;
+
+        public void copy(OffHomeElement src) {
+            if (src.getDecreaseFrom() != null)
+                decreaseFrom = src.getDecreaseFrom();
+            if (src.getDecreaseTo() != null)
+                decreaseTo = src.getDecreaseTo();
+            if (src.getDecreaseTemp() != null)
+                decreaseTemp = src.getDecreaseTemp();
         }
     }
 
@@ -87,9 +118,7 @@ public class ControllerConfig {
                 dayAdjust = src.getDayAdjust();
             if (src.getHeatCharacteristics() != null) {
                 heatCharacteristics = new ArrayList<>();
-                for (HeatCharacteristics hc : src.getHeatCharacteristics()) {
-                    heatCharacteristics.add(hc);
-                }
+                heatCharacteristics.addAll(src.getHeatCharacteristics());
             }
         }
     }
@@ -98,8 +127,8 @@ public class ControllerConfig {
     @Setter
     @NoArgsConstructor
     public static class HeatCharacteristics {
-        double tempMax;
-        double heatFactor;
+        Double tempMax;
+        Double heatFactor;
 
     }
 }

@@ -40,8 +40,12 @@ export class LoginComponent implements OnInit {
         },
         error: (err) => {
           this.loadingService.invokeLoading(false);
-          this.errorMessage = err.error.error;
           this.loginButtonDisabled = false;
+          this.errorMessage = err.error?.error;
+          if (!this.errorMessage) {
+            this.errorMessage = 'An error occurred';
+            console.error("An error occurred ", err);
+          }
         },
       });
     }

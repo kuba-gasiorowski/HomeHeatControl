@@ -17,6 +17,8 @@ import { InputPercentDirective } from './shared/directives/input-percent.directi
 import { InputTemperatureDirective } from './shared/directives/input-temperature.directive';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { ModalLoadingComponent } from './components/modal-loading/modal-loading.component';
+import {InputDateTimeDirective} from "./shared/directives/input-datetime.directive";
+import {DatePipe} from "@angular/common";
 
 @NgModule({
   declarations: [
@@ -27,6 +29,7 @@ import { ModalLoadingComponent } from './components/modal-loading/modal-loading.
     GeneralConfigComponent,
     LoginComponent,
     ConfirmDialogComponent,
+    InputDateTimeDirective,
     InputTimeDirective,
     InputPercentDirective,
     InputTemperatureDirective,
@@ -40,7 +43,7 @@ import { ModalLoadingComponent } from './components/modal-loading/modal-loading.
     ReactiveFormsModule,
     NgbModule,
   ],
-  providers: [httpInterceptorProviders],
+  providers: [httpInterceptorProviders, DatePipe],
   bootstrap: [AppComponent],
 })
 export class AppModule {}

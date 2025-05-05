@@ -41,7 +41,14 @@ export class Config {
   nightEndTime?: Time;
   dayStartTime?: Time;
   dayEndTime?: Time;
+  offHome?: OffHomeElement[];
   circuits?: CircuitConfig[];
+}
+
+export class OffHomeElement {
+  decreaseFrom?: Date;
+  decreaseTo?: Date;
+  decreaseTemp?: number;
 }
 
 export class Time {
@@ -50,11 +57,14 @@ export class Time {
   second: number = 0;
   nano: number = 0;
 
-  constructor(data: number[]) {
-    this.hour = data[0];
-    this.minute = data[1];
-    if (data.length > 2) this.second = data[2];
-    if (data.length > 3) this.nano = data[3];
+  constructor(data: string) {
+    let time = data.split(':').map((item) => {
+      return parseInt(item, 10);
+    });
+    this.hour = time[0];
+    this.minute = time[1];
+    if (time.length > 2) this.second = time[2];
+    if (time.length > 3) this.nano = time[3];
   }
 
   public toString(): string {

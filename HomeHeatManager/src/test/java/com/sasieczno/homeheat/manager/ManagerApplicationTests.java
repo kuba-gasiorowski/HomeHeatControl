@@ -485,16 +485,15 @@ class ManagerApplicationTests {
 	}
 
 	void convertAndCheckLocaltime(LocalTime expected, Object src) throws IllegalArgumentException {
-		List<Integer> data;
-		Assertions.assertTrue(List.class.isAssignableFrom(src.getClass()));
-		data = (List<Integer>) src;
-		Assertions.assertTrue(data.size() >= 2);
-		LocalTime lt = LocalTime.of(data.get(0), data.get(1));
-		if (data.size() > 2)
-			lt = lt.withSecond(data.get(2));
-		if (data.size() > 3)
-			lt = lt.withNano(data.get(3));
-
+		String data;
+		Assertions.assertTrue(String.class.isAssignableFrom(src.getClass()));
+		data = (String) src;
+		List<String> parts = List.of(data.split(":"));
+        Assertions.assertEquals(3, parts.size());
+		LocalTime lt = LocalTime
+				.of(Integer.parseInt(parts.get(0)),
+						Integer.parseInt(parts.get(1)),
+						Integer.parseInt(parts.get(2)));
 		Assertions.assertEquals(expected, lt);
 	}
 
