@@ -2,7 +2,7 @@ plugins {
     id 'nebula.ospackage' version '9.1.1'
 }
 
-project.version = '1.1'
+project.version = '1.2'
 
 task testHomeHeat(type: Exec) {
     commandLine 'python3', '-m', 'unittest', '-v', 'TestHomeHeat.py'
