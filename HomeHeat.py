@@ -10,6 +10,7 @@ import datetime
 import logging
 import logging.config
 import math
+import signal
 import socket
 import struct
 import sys
@@ -18,7 +19,7 @@ import yaml
 from adafruit_ads1x15.analog_in import AnalogIn
 from enum import Enum
 
-VERSION = '1.0.0'
+VERSION = '1.3.0'
 
 # Reference voltage for thermistor resistance measurements
 REF_VOLTAGE = 3.3
@@ -225,7 +226,7 @@ def reset_circuits(circuit_table):
     for elem in circuit_table:
         GPIO.output(elem[0], GPIO.LOW)
         elem[1] = GPIO.LOW
-        time.sleep(1.0)
+        time.sleep(0.3)
 
 
 def initialize_ads(ads_id, i2c_object, ads_list, sensor_setup_list, sensor_map_list):
@@ -324,10 +325,29 @@ circuits = [
 ]
 
 
-@atexit.register
-def cleanup():
+after_cleanup = False
+
+
+def cleanup(logger):
+    global after_cleanup
+    if after_cleanup:
+        return
+    logger.info("Cleaning up GPIO and circuits")
     reset_circuits(circuits)
     GPIO.cleanup()
+    after_cleanup = True
+
+
+def terminate_handler(signal, frame, logger):
+    """
+    Signal handler for graceful termination of the process
+    :param signal: The signal number
+    :param frame: The current stack frame
+    """
+    logger.info("Terminating HomeHeatController process")
+    cleanup(logger)
+    sys.exit(0)
+
 
 def main():
     parser = argparse.ArgumentParser(description='Home Heat Controller process', prog='HomeHeatController')
@@ -341,6 +361,9 @@ def main():
         logging_config = yaml.load(f, Loader=yaml.FullLoader)
         logging.config.dictConfig(logging_config)
     logger = logging.getLogger()
+    signal.signal(signal.SIGTERM, lambda s, f: terminate_handler(s, f, logger))
+    signal.signal(signal.SIGQUIT, lambda s, f: terminate_handler(s, f, logger))
+    atexit.register(lambda : cleanup(logger))
 
     GPIO.setmode(GPIO.BCM)
     sensor_setup = [
@@ -490,7 +513,7 @@ def main():
                     logger.info(log_str, index)
                     continue
                 heating_period, desired_temp = \
-                    get_heating_period(heating_level, day_period, temp, float(cfg['tempBaseLevel']), int(cfg['circuits'][index]), check_decrease(cfg, curr_timestamp))
+                    get_heating_period(heating_level, day_period, temp, float(cfg['tempBaseLevel']), cfg['circuits'][index], check_decrease(cfg, curr_timestamp))
                 if heating_period <= 0 and circuits[index][1] != GPIO.LOW:
                     circuits[index][1] = GPIO.LOW
                     GPIO.output(circuits[index][0], GPIO.LOW)
